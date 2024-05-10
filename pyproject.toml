@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Lunarmagpie <bambolambo0@gmail.com>"]
 readme = "README.md"
+include = [{path = "bin"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

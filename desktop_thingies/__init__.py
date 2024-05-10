@@ -5,7 +5,7 @@ from pathlib import Path
 import gi
 
 # Setup GTK stuff. This is quite annoying but it needs to go here.
-binary_dir = str(Path(__file__).parent.parent / "bin")
+binary_dir = str(Path(__file__).parent / "bin")
 os.environ["GI_TYPELIB_PATH"] = binary_dir
 ctypes.CDLL(binary_dir + "/libgtk4-layer-shell.so")
 gi.require_version("Gtk", "4.0")
@@ -26,7 +26,8 @@ def main():
     if len(sys.argv) < 1:
         raise
 
-    path = sys.argv[1].replace("/", ".")
+    path = Path(sys.argv[1])
 
-    config = importlib.import_module(path)
+    sys.path.append(str(path.parent))
+    config = importlib.import_module(path.name.removesuffix(".py"))
     Client(config.objects).start()
