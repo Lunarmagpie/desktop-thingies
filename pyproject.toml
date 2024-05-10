@@ -1,19 +1,21 @@
 [tool.poetry]
-name = "widgettool"
+name = "desktop_thingies"
 version = "0.1.0"
 description = ""
 authors = ["Lunarmagpie <bambolambo0@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 pygobject = "^3.48.2"
-pillow = "^10.3.0"
 pymunk = "^6.7.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.3"
 pyright = "^1.1.362"
+
+[tool.poetry.scripts]
+desktop_thingies = "desktop_thingies:main"
 
 [build-system]
 requires = ["poetry-core"]

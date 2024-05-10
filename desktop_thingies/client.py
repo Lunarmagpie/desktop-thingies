@@ -9,8 +9,7 @@ import math
 import random
 from copy import deepcopy
 from desktop_thingies.physics_object import PhysicsObject
-
-CDLL("libgtk4-layer-shell.so")
+from desktop_thingies.constants import SIMULATION_SCALE
 
 import gi
 
@@ -20,8 +19,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 
-from gi.repository import Gdk, Gtk, GLib, Graphene  # type: ignore
-from gi.repository import Gtk4LayerShell as LayerShell  # type: ignore
+from gi.repository import Gdk, Gtk, GLib, Graphene, Gtk4LayerShell as LayerShell  # type: ignore
 
 THEME = """
 window.background {
@@ -76,15 +74,12 @@ class PhysicsSpace:
     has_saved = False
 
     def _draw(self, snapshot: Gtk.Snapshot):
-        print((time.time()))
-
         for obj in self.physics_objects:
+            angle = obj._body.angle
 
-            angle = obj.body.angle
-
-            pos = obj.body.position
+            pos = obj._body.position
             snapshot.translate(
-                Graphene.Point().init(pos.x * self.SCALE, pos.y * self.SCALE)
+                Graphene.Point().init(pos.x * SIMULATION_SCALE, pos.y * SIMULATION_SCALE)
             )
             snapshot.rotate(-angle)
 
@@ -92,7 +87,7 @@ class PhysicsSpace:
 
             snapshot.rotate(angle)
             snapshot.translate(
-                Graphene.Point().init(-pos.x * self.SCALE, -pos.y * self.SCALE)
+                Graphene.Point().init(-pos.x * SIMULATION_SCALE, -pos.y * SIMULATION_SCALE)
             )
 
     def _on_mouse_click(self, gesture, data, x, y):
@@ -100,7 +95,7 @@ class PhysicsSpace:
             return
         for obj in self.physics_space.shapes:
             if (
-                obj.point_query((x / self.SCALE, y / self.SCALE)).distance
+                obj.point_query((x / SIMULATION_SCALE, y / SIMULATION_SCALE)).distance
                 <= self.CLICK_TOLERANCE
             ):
                 self.holding_body = obj.body
@@ -130,8 +125,8 @@ class PhysicsSpace:
     def update(self, step: float):
         if self.holding_body is not None:
             distance = (
-                self.mouse_position[0] / self.SCALE - self.holding_body.position[0],
-                self.mouse_position[1] / self.SCALE - self.holding_body.position[1],
+                self.mouse_position[0] / SIMULATION_SCALE - self.holding_body.position[0],
+                self.mouse_position[1] / SIMULATION_SCALE - self.holding_body.position[1],
             )
             self.holding_body.apply_impulse_at_world_point(
                 (distance[0] * 5, distance[1] * 5), (0, 0)
@@ -176,20 +171,20 @@ class PhysicsSpace:
         for shape in self.physics_objects:
             shape.initiate()
 
-            self.physics_space.add(shape.body)
-            self.physics_space.add(shape.physics_shape)
+            self.physics_space.add(shape._body)
+            self.physics_space.add(shape._physics_shape)
 
-            shape.body.position = pymunk.Vec2d(
-                random.randrange(0, geometry.width / self.SCALE),
-                random.randrange(0, geometry.height / self.SCALE),
+            shape._body.position = pymunk.Vec2d(
+                random.randrange(0, geometry.width / SIMULATION_SCALE),
+                random.randrange(0, geometry.height / SIMULATION_SCALE),
             )
-            shape.body.velocity_func = self.limit_velocity
-            self.physics_space.reindex_shapes_for_body(shape.body)
+            shape._body.velocity_func = self.limit_velocity
+            self.physics_space.reindex_shapes_for_body(shape._body)
 
         add_box(
             self.physics_space,
             (0, 0),
-            (geometry.width / self.SCALE, geometry.height / self.SCALE),
+            (geometry.width / SIMULATION_SCALE, geometry.height / SIMULATION_SCALE),
         )
 
 
@@ -224,7 +219,7 @@ class Client:
 
             objects = []
             for object in self.objects:
-                if monitor.get_connector() not in object.displays:
+                if object.displays and monitor.get_connector() not in object.displays:
                     continue
                 objects += [deepcopy(object)]
 

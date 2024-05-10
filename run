@@ -1,3 +1,0 @@
-#!/bin/bash
-LD_LIBRARY_PATH="/home/lunar/gtk4-layer-shell/build/src/" GI_TYPELIB_PATH="/home/lunar/gtk4-layer-shell/build/src/" python -m desktop_thingies
-
