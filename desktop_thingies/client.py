@@ -76,6 +76,8 @@ class PhysicsSpace:
     has_saved = False
 
     def _draw(self, snapshot: Gtk.Snapshot):
+        print((time.time()))
+
         for obj in self.physics_objects:
 
             angle = obj.body.angle
@@ -112,6 +114,7 @@ class PhysicsSpace:
     @staticmethod
     def limit_velocity(body, gravity, damping, dt):
         max_velocity = 1000
+        max_angular_velocity = 500
         pymunk.Body.update_velocity(body, gravity, damping, dt)
 
         # No matter what apply friction
@@ -121,10 +124,8 @@ class PhysicsSpace:
         if body.velocity.length > max_velocity:
             body.velocity *= 0.8
 
-        if abs(body.angular_velocity > 100):
+        if abs(body.angular_velocity > max_angular_velocity):
             body.angular_velocity = body.angular_velocity * 0.8
-        if abs(body.angular_velocity) > 150:
-            body.angular_velocity = math.copysign(150, body.angular_velocity)
 
     def update(self, step: float):
         if self.holding_body is not None:
@@ -173,15 +174,23 @@ class PhysicsSpace:
         self.physics_space
 
         for shape in self.physics_objects:
-            shape.body.velocity_func = self.limit_velocity
+            shape.initiate()
 
             self.physics_space.add(shape.body)
             self.physics_space.add(shape.physics_shape)
 
-            shape.body.position = pymunk.Vec2d(random.randrange(0, geometry.width / self.SCALE), random.randrange(0, geometry.height / self.SCALE))
+            shape.body.position = pymunk.Vec2d(
+                random.randrange(0, geometry.width / self.SCALE),
+                random.randrange(0, geometry.height / self.SCALE),
+            )
+            shape.body.velocity_func = self.limit_velocity
             self.physics_space.reindex_shapes_for_body(shape.body)
 
-        add_box(self.physics_space, (0, 0), (geometry.width / self.SCALE, geometry.height / self.SCALE))
+        add_box(
+            self.physics_space,
+            (0, 0),
+            (geometry.width / self.SCALE, geometry.height / self.SCALE),
+        )
 
 
 @dataclasses.dataclass
@@ -213,9 +222,13 @@ class Client:
 
             window = Gtk.ApplicationWindow()
 
-            space = PhysicsSpace(
-                monitor, window, canvas, physics_space, deepcopy(self.objects)
-            )
+            objects = []
+            for object in self.objects:
+                if monitor.get_connector() not in object.displays:
+                    continue
+                objects += [deepcopy(object)]
+
+            space = PhysicsSpace(monitor, window, canvas, physics_space, objects)
             self._spaces += [space]
 
             space.setup_window()
