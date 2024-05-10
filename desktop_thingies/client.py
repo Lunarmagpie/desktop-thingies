@@ -22,16 +22,17 @@ window.background {
 
 
 def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
+    WALL_WIDTH = 50
     x0, y0 = p0
     x1, y1 = p1
     ps = [
-        (x0 - 20, y0 - 20),
-        (x1 + 20, y0 - 20),
-        (x1 + 20, y1 + 20),
-        (x0 - 20, y1 + 20),
+        (x0 - WALL_WIDTH, y0 - WALL_WIDTH),
+        (x1 + WALL_WIDTH, y0 - WALL_WIDTH),
+        (x1 + WALL_WIDTH, y1 + WALL_WIDTH),
+        (x0 - WALL_WIDTH, y1 + WALL_WIDTH),
     ]
     for i in range(4):
-        segment = pymunk.Segment(space.static_body, ps[i], ps[(i + 1) % 4], 20)
+        segment = pymunk.Segment(space.static_body, ps[i], ps[(i + 1) % 4], WALL_WIDTH)
         segment.elasticity = 0.5
         segment.friction = 0.5
         space.add(segment)
@@ -115,6 +116,8 @@ class PhysicsSpace:
 
         if body.velocity.length > max_velocity:
             body.velocity *= 0.8
+        if body.velocity.length > max_velocity * 1.5:
+            body.velocity = body.velocity * 0.5
 
         if abs(body.angular_velocity > max_angular_velocity):
             body.angular_velocity = body.angular_velocity * 0.8
@@ -127,9 +130,11 @@ class PhysicsSpace:
                 self.mouse_position[1] / SIMULATION_SCALE
                 - self.holding_body.position[1],
             )
-            self.holding_body.apply_impulse_at_world_point(
-                (distance[0] * 5, distance[1] * 5), (0, 0)
-            )
+
+            if self.holding_body.velocity.length < 800:
+                self.holding_body.apply_impulse_at_world_point(
+                    (min(distance[0], 100), min(distance[1], 100)), (0, 0)
+                )
 
         self.physics_space.step(step)
         self.canvas.queue_draw()

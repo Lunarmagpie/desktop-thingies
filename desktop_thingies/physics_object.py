@@ -56,8 +56,6 @@ class Texture(PhysicsObject):
         self._physics_shape.elasticity = self.elasticity
 
     def render_onto(self, snapshot: Gtk.Snapshot):
-        """Render the object at 0,0 on the snapsho"""
-
         bounds = Graphene.Rect().init(
             -self._gdk_texture.get_width() / 2 * self.scale,
             -self._gdk_texture.get_height() / 2 * self.scale,
