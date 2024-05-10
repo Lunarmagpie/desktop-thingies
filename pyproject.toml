@@ -17,6 +17,15 @@ pyright = "^1.1.362"
 [tool.poetry.scripts]
 desktop_thingies = "desktop_thingies:main"
 
+[tool.ruff.lint]
+select = [
+    # Pyflakes
+    "E",
+    "F",
+    # isort
+    "I",
+]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

@@ -1,15 +1,11 @@
-# A base class for implementing desktop widget
-from ctypes import ArgumentError
 import dataclasses
-from typing import Protocol
-from abc import ABC, abstractmethod, abstractproperty
-import pymunk
-from desktop_thingies.constants import SIMULATION_SCALE
+from abc import ABC, abstractmethod
 
 import gi
+import pymunk
 
-gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gdk, Gsk, Graphene  # type: ignore
+from desktop_thingies.constants import SIMULATION_SCALE
+from gi.repository import Gdk, Graphene, Gsk, Gtk  # type: ignore
 
 
 @dataclasses.dataclass
@@ -44,7 +40,12 @@ class Texture(PhysicsObject):
     def initiate(self):
         self._gdk_texture = Gdk.Texture.new_from_filename(self.texture)
 
-        radius = min(self._gdk_texture.get_width(), self._gdk_texture.get_height()) / SIMULATION_SCALE / 2 * self.scale
+        radius = (
+            min(self._gdk_texture.get_width(), self._gdk_texture.get_height())
+            / SIMULATION_SCALE
+            / 2
+            * self.scale
+        )
         self._physics_shape = pymunk.Circle(
             pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, radius)),
             radius=radius,

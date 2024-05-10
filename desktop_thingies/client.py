@@ -1,25 +1,18 @@
-from collections.abc import Callable
-from ctypes import CDLL
-import threading
 import dataclasses
-import functools
-import pymunk
-import time
-import math
 import random
+import threading
+import time
+from collections.abc import Callable
 from copy import deepcopy
-from desktop_thingies.physics_object import PhysicsObject
-from desktop_thingies.constants import SIMULATION_SCALE
 
 import gi
+import pymunk
 
-# import cairo
+from desktop_thingies.constants import SIMULATION_SCALE
+from desktop_thingies.physics_object import PhysicsObject
 
-gi.require_version("Gtk", "4.0")
-gi.require_version("Gdk", "4.0")
-gi.require_version("Gtk4LayerShell", "1.0")
-
-from gi.repository import Gdk, Gtk, GLib, Graphene, Gtk4LayerShell as LayerShell  # type: ignore
+from gi.repository import Gdk, Graphene, Gtk  # type: ignore
+from gi.repository import Gtk4LayerShell as LayerShell
 
 THEME = """
 window.background {
@@ -79,7 +72,9 @@ class PhysicsSpace:
 
             pos = obj._body.position
             snapshot.translate(
-                Graphene.Point().init(pos.x * SIMULATION_SCALE, pos.y * SIMULATION_SCALE)
+                Graphene.Point().init(
+                    pos.x * SIMULATION_SCALE, pos.y * SIMULATION_SCALE
+                )
             )
             snapshot.rotate(-angle)
 
@@ -87,7 +82,9 @@ class PhysicsSpace:
 
             snapshot.rotate(angle)
             snapshot.translate(
-                Graphene.Point().init(-pos.x * SIMULATION_SCALE, -pos.y * SIMULATION_SCALE)
+                Graphene.Point().init(
+                    -pos.x * SIMULATION_SCALE, -pos.y * SIMULATION_SCALE
+                )
             )
 
     def _on_mouse_click(self, gesture, data, x, y):
@@ -125,8 +122,10 @@ class PhysicsSpace:
     def update(self, step: float):
         if self.holding_body is not None:
             distance = (
-                self.mouse_position[0] / SIMULATION_SCALE - self.holding_body.position[0],
-                self.mouse_position[1] / SIMULATION_SCALE - self.holding_body.position[1],
+                self.mouse_position[0] / SIMULATION_SCALE
+                - self.holding_body.position[0],
+                self.mouse_position[1] / SIMULATION_SCALE
+                - self.holding_body.position[1],
             )
             self.holding_body.apply_impulse_at_world_point(
                 (distance[0] * 5, distance[1] * 5), (0, 0)
