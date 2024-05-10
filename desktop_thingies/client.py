@@ -217,15 +217,18 @@ class Client:
         for monitor in display.get_monitors():
             # These are the objects that will be intereacted with by the engines
             physics_space = pymunk.Space(threaded=False)
-            canvas = Canvas()
-
-            window = Gtk.ApplicationWindow()
 
             objects = []
             for object in self.objects:
                 if object.displays and monitor.get_connector() not in object.displays:
                     continue
                 objects += [deepcopy(object)]
+            if not objects:
+                # Do not create the window if there are no objects to put on it.
+                continue
+
+            canvas = Canvas()
+            window = Gtk.ApplicationWindow()
 
             space = PhysicsSpace(monitor, window, canvas, physics_space, objects)
             self._spaces += [space]
