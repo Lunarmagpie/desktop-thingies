@@ -19,7 +19,13 @@ import sys
 
 from desktop_thingies import constants
 from desktop_thingies.client import Client
-from desktop_thingies.physics_object import Texture
+from desktop_thingies.physics_object import Texture, Rectangle, Circle
+
+__all__ = (
+    "Texture",
+    "Rectangle",
+    "Circle",
+)
 
 
 def main():
