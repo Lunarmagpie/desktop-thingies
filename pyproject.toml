@@ -16,7 +16,7 @@ ruff = "^0.4.3"
 pyright = "^1.1.362"
 
 [tool.poetry.scripts]
-desktop_thingies = "desktop_thingies:main"
+desktop-thingies = "desktop_thingies:main"
 
 [tool.ruff.lint]
 select = [
