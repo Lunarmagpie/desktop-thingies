@@ -54,8 +54,12 @@ def main():
     sys.path.append(str(config.parent))
     try:
         config = importlib.import_module(config.name.removesuffix(".py"))
-    except:
+    except ImportError:
         print(f"Config file '{str(config)}' not found.")
         exit(1)
 
-    Client(config.objects, target_framerate=getattr(config, "framerate", None)).start()
+    Client(
+        config.objects,
+        monitor=getattr(config, "monitor", None),
+        target_framerate=getattr(config, "framerate", None),
+    ).start()

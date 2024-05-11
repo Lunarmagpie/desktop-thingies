@@ -101,7 +101,6 @@ class PhysicsSpace:
     def _draw(self, snapshot: Gtk.Snapshot):
         self.sim_lock.acquire()
         for obj in self.physics_objects:
-            assert obj._body
             snapshot.save()
             angle = math.degrees(obj._body.angle)
 
@@ -221,8 +220,10 @@ class PhysicsSpace:
 
         if not self.sim_sleep and self.sim_can_sleep:
             for object in self.physics_objects:
-                assert object._body
-                if object._body.velocity.length != 0 or object._body.angular_velocity != 0:
+                if (
+                    object._body.velocity.length != 0
+                    or object._body.angular_velocity != 0
+                ):
                     is_anything_moving = True
 
             if not is_anything_moving:
@@ -262,11 +263,6 @@ class PhysicsSpace:
         self.physics_space
 
         for shape in self.physics_objects:
-            shape.initiate()
-
-            assert shape._body
-            assert shape._physics_shape
-
             self.physics_space.add(shape._body)
             self.physics_space.add(shape._physics_shape)
 
@@ -293,6 +289,7 @@ class PhysicsSpace:
 @dataclasses.dataclass
 class Client:
     objects: list[PhysicsObject]
+    monitor: str | None = None
     target_framerate: int | None = None
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
@@ -302,14 +299,14 @@ class Client:
 
         frame_clock = user_data.get_frame_clock()
 
-        for space in self._spaces:    
+        for space in self._spaces:
             space.update(STEP)
 
         time.sleep(STEP)
 
         # Schedule a new frame now that this one is over.
         frame_clock.begin_updating()
-    
+
     def on_activate(self, app):
         provider = Gtk.CssProvider()
         provider.load_from_data(THEME, len(THEME))
@@ -320,22 +317,16 @@ class Client:
         )
 
         for monitor in display.get_monitors():
+            if self.monitor and monitor.get_connector() != self.monitor:
+                continue
+
             # These are the objects that will be intereacted with by the engines
             physics_space = pymunk.Space(threaded=False)
-
-            objects = []
-            for object in self.objects:
-                if object.displays and monitor.get_connector() not in object.displays:
-                    continue
-                objects += [deepcopy(object)]
-            if not objects:
-                # Do not create the window if there are no objects to put on it.
-                continue
 
             canvas = Canvas()
             window = Gtk.ApplicationWindow()
 
-            space = PhysicsSpace(monitor, window, canvas, physics_space, objects)
+            space = PhysicsSpace(monitor, window, canvas, physics_space, self.objects)
             self._spaces += [space]
 
             space.setup_drawing_area()
@@ -344,7 +335,14 @@ class Client:
 
             app.add_window(window)
 
-            window.get_frame_clock().connect("after_paint", self._on_after_paint, window)
+            window.get_frame_clock().connect(
+                "after_paint", self._on_after_paint, window
+            )
+
+            # We only run one window to prevent bugs (i am lazy af)
+            break
+        else:
+            raise Exception(f"Monitor {self.monitor} not found")
 
     def start(self):
         self.space = pymunk.Space()

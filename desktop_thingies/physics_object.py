@@ -16,14 +16,9 @@ class PhysicsObject(ABC):
     """The friction of the object"""
     elasticity: float = dataclasses.field(kw_only=True, default=0.85)
     """The elasticity of the object"""
-    displays: list[str | None] = dataclasses.field(kw_only=True, default_factory=list)
-    """The displays this object should display on. ie. DP-3"""
 
-    _physics_shape: pymunk.Shape | None = None
-    _body: pymunk.Body | None = None
-
-    def initiate(self):
-        """inititate the physics object"""
+    _physics_shape: pymunk.Shape = dataclasses.field(default=None)  # type: ignore
+    _body: pymunk.Body = dataclasses.field(default=None)  # type: ignore
 
     @abstractmethod
     def render_onto(self, snapshot: Gtk.Snapshot):
@@ -37,7 +32,7 @@ class Texture(PhysicsObject):
     scale: float = dataclasses.field(kw_only=True, default=1)
     """Amount to scale the image."""
 
-    def initiate(self):
+    def __post_init__(self):
         self._gdk_texture = Gdk.Texture.new_from_filename(self.texture)
 
         radius = (
@@ -72,7 +67,7 @@ class Circle(PhysicsObject):
     radius: int = dataclasses.field(kw_only=True)
     color: str = dataclasses.field(kw_only=True)
 
-    def initiate(self):
+    def __post_init__(self):
         self._physics_shape = pymunk.Circle(
             pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, self.radius)),
             radius=self.radius / SIMULATION_SCALE,
@@ -102,7 +97,7 @@ class Rectangle(PhysicsObject):
     height: int = dataclasses.field(kw_only=True)
     color: str = dataclasses.field(kw_only=True)
 
-    def initiate(self):
+    def __post_init__(self):
         self._physics_shape = pymunk.Poly(
             pymunk.Body(
                 self.mass, pymunk.moment_for_box(self.mass, (self.width, self.height))
