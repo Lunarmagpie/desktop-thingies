@@ -12,7 +12,7 @@ import pymunk
 from desktop_thingies.constants import SIMULATION_SCALE
 from desktop_thingies.physics_object import PhysicsObject
 
-from gi.repository import Gdk, Graphene, Gtk, Gtk4LayerShell as LayerShell  # type: ignore
+from gi.repository import Gdk, Graphene, Gtk, GLib, Gtk4LayerShell as LayerShell  # type: ignore
 
 THEME = """
 window.background {
@@ -302,11 +302,6 @@ class Client:
         app = Gtk.Application()
         app.connect("activate", self.on_activate)
 
-        threads = [
-            threading.Thread(target=self.physics_update, args=[]),
-            threading.Thread(target=app.run, args=[]),
-        ]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+        GLib.Thread.new("physics", func=self.physics_update)
+        
+        app.run()
