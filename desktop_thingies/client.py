@@ -1,5 +1,6 @@
 import dataclasses
 import random
+import types
 import threading
 import time
 import math
@@ -19,6 +20,10 @@ window.background {
    background: unset;
 }  
 """
+
+class Vec2(types.NamedTuple):
+    width: int
+    height: int
 
 
 def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
@@ -78,7 +83,11 @@ class PhysicsSpace:
     has_saved = False
 
     def __post_init__(self):
-        self.geometry = self.monitor.get_geometry()
+        geometry = self.monitor.get_geometry()
+        self.geometry = Vec2(
+            geometry.width,
+            geometry.height,
+        )
 
     def _draw(self, snapshot: Gtk.Snapshot):
         for obj in self.physics_objects:
