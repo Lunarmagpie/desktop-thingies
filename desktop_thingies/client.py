@@ -2,6 +2,7 @@ import dataclasses
 import random
 import threading
 import time
+import math
 from collections.abc import Callable
 from copy import deepcopy
 
@@ -11,8 +12,7 @@ import pymunk
 from desktop_thingies.constants import SIMULATION_SCALE
 from desktop_thingies.physics_object import PhysicsObject
 
-from gi.repository import Gdk, Graphene, Gtk  # type: ignore
-from gi.repository import Gtk4LayerShell as LayerShell
+from gi.repository import Gdk, Graphene, Gtk, Gtk4LayerShell as LayerShell  # type: ignore
 
 THEME = """
 window.background {
@@ -182,6 +182,7 @@ class PhysicsSpace:
                 random.randrange(0, geometry.width / SIMULATION_SCALE),
                 random.randrange(0, geometry.height / SIMULATION_SCALE),
             )
+            shape._body.angle = random.random() * 360
             shape._body.velocity_func = self.limit_velocity
             self.physics_space.reindex_shapes_for_body(shape._body)
 
@@ -204,13 +205,12 @@ class Client:
             # Techinically this puts the framerate a little below the target,
             # but pymunk seems to segfault if you call the function again before the
             # step time is over.
-            STEP = 1. / (self.target_framerate or 60)
+            STEP = 1.0 / (self.target_framerate or 60)
 
             for space in self._spaces:
                 space.update(STEP)
 
             time.sleep(STEP * 1.01)
-
 
     def on_activate(self, app):
         provider = Gtk.CssProvider()
