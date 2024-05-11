@@ -233,7 +233,7 @@ class Client:
             for space in self._spaces:
                 space.update(STEP)
 
-            time.sleep(STEP * 1.01)
+            time.sleep(STEP * 1.05)
 
     def on_activate(self, app):
         provider = Gtk.CssProvider()
