@@ -140,7 +140,6 @@ class PhysicsSpace:
                 self.mouse_position[1] / SIMULATION_SCALE
                 - self.holding_body.position[1],
             )
-            self.holding_body.velocity = (0, 0)
 
             x, y = 0, 0
             if 0 <= self.mouse_position[0] <= self.monitor.get_geometry().width:
