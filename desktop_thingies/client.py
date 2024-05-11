@@ -209,7 +209,7 @@ class Client:
             for space in self._spaces:
                 space.update(STEP)
 
-            time.sleep(STEP)
+            time.sleep(STEP * 1.01)
 
 
     def on_activate(self, app):
