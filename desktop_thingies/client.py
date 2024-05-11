@@ -1,6 +1,6 @@
 import dataclasses
 import random
-import types
+import typing
 import threading
 import time
 import math
@@ -21,7 +21,8 @@ window.background {
 }  
 """
 
-class Vec2(types.NamedTuple):
+
+class Vec2(typing.NamedTuple):
     width: int
     height: int
 
@@ -312,5 +313,5 @@ class Client:
         app.connect("activate", self.on_activate)
 
         GLib.Thread.new("physics", func=self.physics_update)
-        
+
         app.run()
