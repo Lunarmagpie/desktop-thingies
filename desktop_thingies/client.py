@@ -169,8 +169,6 @@ class PhysicsSpace:
     def _on_after_paint(self, user_data):
         if not self.sim_sleep:
             self.canvas.queue_draw()
-        # wait a slightly long time to help with performance
-        time.sleep(0.02)
         self.window.get_frame_clock().request_phase(Gdk.FrameClockPhase.PAINT)
     
     def limit_velocity(self, body, gravity, damping, dt):
