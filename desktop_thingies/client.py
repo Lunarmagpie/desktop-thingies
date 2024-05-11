@@ -27,7 +27,7 @@ class Vec2(typing.NamedTuple):
     height: int
 
 
-def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
+def add_box(space: pymunk.Space, friction: float, elasticity: float, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
     WALL_WIDTH = 1000
     WALL_OFFSET = 2
     x0, y0 = p0
@@ -40,8 +40,8 @@ def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: in
     ]
     for i in range(4):
         segment = pymunk.Segment(space.static_body, ps[i], ps[(i + 1) % 4], WALL_WIDTH)
-        segment.elasticity = 0.5
-        segment.friction = 0.5
+        segment.elasticity = friction
+        segment.friction = elasticity
         space.add(segment)
 
 
@@ -76,6 +76,8 @@ class PhysicsSpace:
 
     physics_space: pymunk.Space
     physics_objects: list[PhysicsObject]
+    wall_friction: float = 0.5
+    wall_elasticity: float = 0.5
 
     holding_body: pymunk.Body | None = None
     is_initialized: bool = False
@@ -308,6 +310,8 @@ class PhysicsSpace:
 
         add_box(
             self.physics_space,
+            self.wall_elasticity,
+            self.wall_friction,
             (0, 0),
             (
                 self.geometry.width / SIMULATION_SCALE,
@@ -323,6 +327,8 @@ class Client:
     objects: list[PhysicsObject]
     monitor: str | None = None
     target_framerate: int | None = None
+    wall_friction: float = 0.5
+    wall_elasticity: float = 0.5
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
@@ -345,7 +351,7 @@ class Client:
             canvas = Canvas()
             window = Gtk.ApplicationWindow()
 
-            space = PhysicsSpace(monitor, window, canvas, self.target_framerate, physics_space, self.objects)
+            space = PhysicsSpace(monitor, window, canvas, self.target_framerate, physics_space, self.objects, self.wall_friction, self.wall_elasticity)
             self._spaces += [space]
 
             space.setup_drawing_area()

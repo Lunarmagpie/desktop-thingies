@@ -62,4 +62,6 @@ def main():
         config.objects,
         monitor=getattr(config, "monitor", None),
         target_framerate=getattr(config, "framerate", None),
+        wall_elasticity=getattr(config, "wall_elasticity", 0.5),
+        wall_friction=getattr(config, "wall_friction", 0.5),
     ).start()
