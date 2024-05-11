@@ -168,6 +168,13 @@ class PhysicsSpace:
             y = self.geometry.height - SMALLER_BOUND
         self.mouse_position = (x, y)
 
+    def _on_scroll(self, event, x, y):
+        if self.holding_body:
+            self.sim_lock.acquire()
+            self.holding_body.angular_velocity += y
+            self.physics_space.reindex_shapes_for_body(self.holding_body)
+            self.sim_lock.release()
+
     def _on_after_paint(self, _):
         STEP = 1 / (self.target_framerate or 60)
 
@@ -185,7 +192,7 @@ class PhysicsSpace:
 
     def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 500
-        max_angular_velocity = 1.5
+        max_angular_velocity = 15
         pymunk.Body.update_velocity(body, gravity, damping, dt)
 
         # No matter what apply friction
@@ -200,13 +207,20 @@ class PhysicsSpace:
         if body.velocity.length > max_velocity * 1.5:
             body.velocity = body.velocity * 0.5
 
-        if abs(body.angular_velocity > max_angular_velocity):
-            body.angular_velocity = body.angular_velocity * 0.8
+        if body is not self.holding_body:
+            if abs(body.angular_velocity) > max_angular_velocity:
+                body.angular_velocity = body.angular_velocity * 0.6
+            if abs(body.angular_velocity) > max_angular_velocity / 3:
+                body.angular_velocity = body.angular_velocity * 0.9
+
+        if body is self.holding_body:
+            if abs(body.angular_velocity) >= 50:
+                body.angular_velocity = math.copysign(30, body.angular_velocity)
 
         # Finally, velocity close to 0 should be set to 0
         if body.velocity.length < 0.25:
             body.velocity = (0, 0)
-        if body.angular_velocity < 0.001:
+        if abs(body.angular_velocity) < 0.001:
             body.angular_velocity = 0
 
     def update(self, step: float):
@@ -267,6 +281,9 @@ class PhysicsSpace:
         move_event = Gtk.EventControllerMotion.new()
         move_event.connect("motion", self._on_mouse_move)
         self.window.add_controller(move_event)
+        scroll_event = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.VERTICAL)
+        scroll_event.connect("scroll", self._on_scroll)
+        self.window.add_controller(scroll_event)
 
         self.window.present()
 
