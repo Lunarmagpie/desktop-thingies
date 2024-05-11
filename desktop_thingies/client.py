@@ -69,7 +69,7 @@ class PhysicsSpace:
 
     def _draw(self, snapshot: Gtk.Snapshot):
         for obj in self.physics_objects:
-            angle = obj._body.angle
+            angle = math.degrees(obj._body.angle)
 
             pos = obj._body.position
             snapshot.translate(
@@ -107,7 +107,7 @@ class PhysicsSpace:
     @staticmethod
     def limit_velocity(body, gravity, damping, dt):
         max_velocity = 500
-        max_angular_velocity = 250
+        max_angular_velocity = 1.5
         pymunk.Body.update_velocity(body, gravity, damping, dt)
 
         # No matter what apply friction
@@ -130,11 +130,12 @@ class PhysicsSpace:
                 self.mouse_position[1] / SIMULATION_SCALE
                 - self.holding_body.position[1],
             )
+            self.holding_body.velocity = (0, 0)
 
-            if self.holding_body.velocity.length < 600:
-                self.holding_body.apply_impulse_at_world_point(
-                    (min(distance[0] / 2, 50), min(distance[1] / 2, 50)), (0, 0)
-                )
+            self.holding_body.apply_impulse_at_world_point(
+                (distance[0] * 10, distance[1] * 10), self.holding_body.position
+            )
+            self.holding_body.angular_velocity
 
         self.physics_space.step(step)
         self.canvas.queue_draw()
@@ -182,7 +183,7 @@ class PhysicsSpace:
                 random.randrange(0, geometry.width / SIMULATION_SCALE),
                 random.randrange(0, geometry.height / SIMULATION_SCALE),
             )
-            shape._body.angle = random.random() * 360
+            shape._body.angle = random.random() * math.pi * 2
             shape._body.velocity_func = self.limit_velocity
             self.physics_space.reindex_shapes_for_body(shape._body)
 

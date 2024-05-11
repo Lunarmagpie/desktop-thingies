@@ -34,7 +34,9 @@ def main():
         prog="desktop-thingies", description="Add objects to your desktop."
     )
 
-    parser.add_argument("-c", "--config", help="The python file to use as the config file.")
+    parser.add_argument(
+        "-c", "--config", help="The python file to use as the config file."
+    )
 
     args = parser.parse_args()
 
@@ -43,7 +45,9 @@ def main():
         if config_path := os.environ.get("XDG_CONFIG_HOME"):
             config = Path(config) / "desktop-thingies" / "config.py"
         else:
-            config = Path(os.environ["HOME"]) / ".config" / "desktop-thingies" / "config.py"
+            config = (
+                Path(os.environ["HOME"]) / ".config" / "desktop-thingies" / "config.py"
+            )
     else:
         config = Path(args.config)
 
@@ -53,5 +57,5 @@ def main():
     except:
         print(f"Config file '{str(config)}' not found.")
         exit(1)
-    
+
     Client(config.objects, target_framerate=getattr(config, "framerate", None)).start()
