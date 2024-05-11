@@ -7,4 +7,4 @@ pip install git+https://github.com/Lunarmagpie/desktop_thingies/
 desktop_widgets config.py
 ```
 
-[Link to the Fumo art]([url](https://www.deviantart.com/ben10ultimateomniver/art/Reimu-Fumo-Omniverse-Style-978094588)) used in the examples, created by ben10ultimateomniver on deviantart.
+[Link to the Fumo art](https://www.deviantart.com/ben10ultimateomniver/art/Reimu-Fumo-Omniverse-Style-978094588) used in the examples, created by ben10ultimateomniver on deviantart.
