@@ -46,6 +46,7 @@ def clamp(n: float, max: float):
         return max
     return n
 
+
 class Canvas(Gtk.Widget):
     def __init__(self, draw_func: Callable[[Gtk.Snapshot], None] | None = None) -> None:
         draw_func = draw_func
@@ -95,6 +96,8 @@ class PhysicsSpace:
                     -pos.x * SIMULATION_SCALE, -pos.y * SIMULATION_SCALE
                 )
             )
+        # Program possibly isn't yielding thread?
+        time.sleep(0.0001)
 
     def _on_mouse_click(self, gesture, data, x, y):
         if self.holding_body != None:
@@ -109,10 +112,16 @@ class PhysicsSpace:
     def _on_mouse_release(self, gesture, data, x, y):
         if self.holding_body:
             distance = (
-                clamp(self.mouse_position[0] / SIMULATION_SCALE
-                - self.holding_body.position[0], 1000),
-                clamp(self.mouse_position[1] / SIMULATION_SCALE
-                - self.holding_body.position[1], 1000),
+                clamp(
+                    self.mouse_position[0] / SIMULATION_SCALE
+                    - self.holding_body.position[0],
+                    1000,
+                ),
+                clamp(
+                    self.mouse_position[1] / SIMULATION_SCALE
+                    - self.holding_body.position[1],
+                    1000,
+                ),
             )
 
             self.holding_body.apply_impulse_at_world_point(
@@ -184,11 +193,8 @@ class PhysicsSpace:
         move_event.connect("motion", self._on_mouse_move)
         self.window.add_controller(move_event)
 
-        pass
-
     def setup_drawing_area(self):
         self.canvas.draw_func = self._draw
-        pass
 
     def setup_physics_space(self):
         geometry = self.monitor.get_geometry()
@@ -233,7 +239,7 @@ class Client:
             for space in self._spaces:
                 space.update(STEP)
 
-            time.sleep(STEP * 1.05)
+            time.sleep(STEP * 1.01)
 
     def on_activate(self, app):
         provider = Gtk.CssProvider()
