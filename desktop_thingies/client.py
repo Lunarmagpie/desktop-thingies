@@ -168,14 +168,6 @@ class PhysicsSpace:
             y = self.geometry.height - SMALLER_BOUND
         self.mouse_position = (x, y)
 
-    def _on_after_paint(self, user_data):
-        STEP = 0.015
-
-        frame_clock = self.window.get_frame_clock()
-        self.update(STEP)
-        time.sleep(STEP)
-        frame_clock.begin_updating()
-
     def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 500
         max_angular_velocity = 1.5
@@ -227,13 +219,14 @@ class PhysicsSpace:
         # TODO: If nothing is happening, we want to skip updating the sim
         is_anything_moving = False
 
-        for object in self.physics_objects:
-            assert object._body
-            if object._body.velocity.length != 0 or object._body.angular_velocity != 0:
-                is_anything_moving = True
+        if not self.sim_sleep and self.sim_can_sleep:
+            for object in self.physics_objects:
+                assert object._body
+                if object._body.velocity.length != 0 or object._body.angular_velocity != 0:
+                    is_anything_moving = True
 
-        if not is_anything_moving and self.sim_can_sleep:
-            self.sim_sleep = True
+            if not is_anything_moving:
+                self.sim_sleep = True
 
         if not self.sim_sleep:
             self.physics_space.step(step)
@@ -260,9 +253,6 @@ class PhysicsSpace:
         self.window.add_controller(move_event)
 
         self.window.present()
-
-        frame_clock = self.window.get_frame_clock()
-        frame_clock.connect("after_paint", self._on_after_paint)
 
     def setup_drawing_area(self):
         self.canvas.draw_func = self._draw
@@ -307,6 +297,19 @@ class Client:
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
+    def _on_after_paint(self, _, user_data):
+        STEP = 1 / (self.target_framerate or 60)
+
+        frame_clock = user_data.get_frame_clock()
+
+        for space in self._spaces:    
+            space.update(STEP)
+
+        time.sleep(STEP)
+
+        # Schedule a new frame now that this one is over.
+        frame_clock.begin_updating()
+    
     def on_activate(self, app):
         provider = Gtk.CssProvider()
         provider.load_from_data(THEME, len(THEME))
@@ -340,6 +343,8 @@ class Client:
             space.setup_physics_space()
 
             app.add_window(window)
+
+            window.get_frame_clock().connect("after_paint", self._on_after_paint, window)
 
     def start(self):
         self.space = pymunk.Space()
