@@ -216,10 +216,10 @@ class PhysicsSpace:
         self.physics_space
 
         for shape in self.physics_objects:
+            shape.initiate()
+
             assert shape._body
             assert shape._physics_shape
-
-            shape.initiate()
 
             self.physics_space.add(shape._body)
             self.physics_space.add(shape._physics_shape)
