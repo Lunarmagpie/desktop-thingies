@@ -36,4 +36,4 @@ def main():
 
     sys.path.append(str(path.parent))
     config = importlib.import_module(path.name.removesuffix(".py"))
-    Client(config.objects).start()
+    Client(config.objects, framerate=getattr(config, "framerate", None)).start()

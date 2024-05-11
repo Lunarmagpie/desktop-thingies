@@ -195,15 +195,28 @@ class PhysicsSpace:
 @dataclasses.dataclass
 class Client:
     objects: list[PhysicsObject]
+    target_framerate: int | None = None
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
     def physics_update(self):
+        # https://stackoverflow.com/questions/16301193/whats-the-proper-way-to-write-a-game-loop-in-python
+        lastFrameTime  = time.time()
         while True:
+            currentTime = time.time()
+            dt = currentTime - lastFrameTime
+            lastFrameTime = currentTime
+            
             for space in self._spaces:
-                STEP = 0.02
+                STEP = dt
                 time.sleep(STEP)
                 space.update(STEP)
+
+            if target_framerate:
+                sleepTime = 1/FPS - (currentTime - lastFrameTime)
+                if sleepTime > 0:
+                    time.sleep(sleepTime)
+
 
     def on_activate(self, app):
         provider = Gtk.CssProvider()
