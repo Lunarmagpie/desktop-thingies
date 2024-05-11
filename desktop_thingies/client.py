@@ -209,9 +209,7 @@ class PhysicsSpace:
 
         if body is not self.holding_body:
             if abs(body.angular_velocity) > max_angular_velocity:
-                body.angular_velocity = body.angular_velocity * 0.6
-            if abs(body.angular_velocity) > max_angular_velocity / 3:
-                body.angular_velocity = body.angular_velocity * 0.9
+                body.angular_velocity = body.angular_velocity * 0.8
 
         if body is self.holding_body:
             if abs(body.angular_velocity) >= 50:
