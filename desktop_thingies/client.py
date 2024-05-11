@@ -132,10 +132,14 @@ class PhysicsSpace:
             )
             self.holding_body.velocity = (0, 0)
 
+            x, y = 0, 0
+            if 0 <= self.mouse_position[0] <= self.monitor.get_geometry().width:
+                x = distance[0] * 30
+            if 0 <= self.mouse_position[1] <= self.monitor.get_geometry().height:
+                y = distance[1] * 30
             self.holding_body.apply_impulse_at_world_point(
-                (distance[0] * 10, distance[1] * 10), self.holding_body.position
+                (x, y), self.holding_body.position
             )
-            self.holding_body.angular_velocity
 
         self.physics_space.step(step)
         self.canvas.queue_draw()
