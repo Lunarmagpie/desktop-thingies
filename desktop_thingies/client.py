@@ -22,7 +22,7 @@ window.background {
 
 
 def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
-    WALL_WIDTH = 50
+    WALL_WIDTH = 1000
     x0, y0 = p0
     x1, y1 = p1
     ps = [
@@ -37,6 +37,14 @@ def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: in
         segment.friction = 0.5
         space.add(segment)
 
+
+def clamp(n: float, max: float):
+    if n < 0:
+        if n < -max:
+            return -max
+    if n > max:
+        return max
+    return n
 
 class Canvas(Gtk.Widget):
     def __init__(self, draw_func: Callable[[Gtk.Snapshot], None] | None = None) -> None:
@@ -101,21 +109,23 @@ class PhysicsSpace:
     def _on_mouse_release(self, gesture, data, x, y):
         if self.holding_body:
             distance = (
-                self.mouse_position[0] / SIMULATION_SCALE
-                - self.holding_body.position[0],
-                self.mouse_position[1] / SIMULATION_SCALE
-                - self.holding_body.position[1],
+                clamp(self.mouse_position[0] / SIMULATION_SCALE
+                - self.holding_body.position[0], 1000),
+                clamp(self.mouse_position[1] / SIMULATION_SCALE
+                - self.holding_body.position[1], 1000),
             )
+
             self.holding_body.apply_impulse_at_world_point(
-                (distance[0] * 50, distance[1] * 50), self.holding_body.position
+                (distance[0] * (1 / 0.3) * 4, distance[1] * (1 / 0.3) * 4),
+                self.holding_body.position,
             )
-        self.holding_body = None
+
+            self.holding_body = None
 
     def _on_mouse_move(self, motion, x, y):
         self.mouse_position = (x, y)
 
-    @staticmethod
-    def limit_velocity(body, gravity, damping, dt):
+    def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 500
         max_angular_velocity = 1.5
         pymunk.Body.update_velocity(body, gravity, damping, dt)
@@ -124,8 +134,11 @@ class PhysicsSpace:
         body.velocity *= 0.99
         body.angular_velocity *= 0.99
 
+        if self.holding_body == body:
+            body.velocity *= 0.3
+
         if body.velocity.length > max_velocity:
-            body.velocity *= 0.8
+            body.velocity *= 0.9
         if body.velocity.length > max_velocity * 1.5:
             body.velocity = body.velocity * 0.5
 
@@ -141,13 +154,9 @@ class PhysicsSpace:
                 - self.holding_body.position[1],
             )
 
-            x, y = 0, 0
-            if 0 <= self.mouse_position[0] <= self.monitor.get_geometry().width:
-                x = distance[0] * 30
-            if 0 <= self.mouse_position[1] <= self.monitor.get_geometry().height:
-                y = distance[1] * 30
             self.holding_body.apply_impulse_at_world_point(
-                (x, y), self.holding_body.position
+                (distance[0] * (1 / 0.3) * 2, distance[1] * (1 / 0.3) * 2),
+                self.holding_body.position,
             )
 
         self.physics_space.step(step)
