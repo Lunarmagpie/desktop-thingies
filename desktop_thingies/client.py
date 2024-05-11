@@ -80,7 +80,9 @@ class PhysicsSpace:
     is_initialized: bool = False
 
     mouse_position: tuple[int, int] = (0, 0)
-    sim_lock: threading.Semaphore = dataclasses.field(default_factory=threading.BoundedSemaphore)
+    sim_lock: threading.Semaphore = dataclasses.field(
+        default_factory=threading.BoundedSemaphore
+    )
 
     SCALE = 10
     CLICK_TOLERANCE = 1
@@ -167,10 +169,13 @@ class PhysicsSpace:
         self.mouse_position = (x, y)
 
     def _on_after_paint(self, user_data):
-        if not self.sim_sleep:
-            self.canvas.queue_draw()
-        self.window.get_frame_clock().request_phase(Gdk.FrameClockPhase.PAINT)
-    
+        STEP = 0.015
+
+        frame_clock = self.window.get_frame_clock()
+        self.update(STEP)
+        time.sleep(STEP)
+        frame_clock.begin_updating()
+
     def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 500
         max_angular_velocity = 1.5
@@ -232,6 +237,7 @@ class PhysicsSpace:
 
         if not self.sim_sleep:
             self.physics_space.step(step)
+            self.canvas.queue_draw()
 
     def setup_window(self):
         LayerShell.init_for_window(self.window)
@@ -250,7 +256,7 @@ class PhysicsSpace:
 
         move_event = Gtk.EventControllerMotion.new()
         move_event.connect("motion", self._on_mouse_move)
-        
+
         self.window.add_controller(move_event)
 
         self.window.present()
@@ -301,19 +307,6 @@ class Client:
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
-    def physics_update(self):
-        while True:
-            # Techinically this puts the framerate a little below the target,
-            # but pymunk seems to segfault if you call the function again before the
-            # step time is over.
-            STEP = 1.0 / (self.target_framerate or 60)
-            STEP = 0.02
-
-            for space in self._spaces:
-                space.update(STEP)
-
-            time.sleep(STEP)
-
     def on_activate(self, app):
         provider = Gtk.CssProvider()
         provider.load_from_data(THEME, len(THEME))
@@ -348,11 +341,9 @@ class Client:
 
             app.add_window(window)
 
-
     def start(self):
         self.space = pymunk.Space()
 
         app = Gtk.Application()
         app.connect("activate", self.on_activate)
-        GLib.Thread.new("physics", self.physics_update)
         app.run()
