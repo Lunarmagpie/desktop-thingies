@@ -83,6 +83,9 @@ class PhysicsSpace:
     CLICK_TOLERANCE = 1
     has_saved = False
 
+    sim_sleep = False
+    sim_can_sleep = True
+    
     def __post_init__(self):
         geometry = self.monitor.get_geometry()
         self.geometry = Vec2(
@@ -115,6 +118,8 @@ class PhysicsSpace:
         time.sleep(0.0001)
 
     def _on_mouse_click(self, gesture, data, x, y):
+        self.sim_sleep = False
+        self.sim_can_sleep = False
         if self.holding_body != None:
             return
         for obj in self.physics_space.shapes:
@@ -125,6 +130,7 @@ class PhysicsSpace:
                 self.holding_body = obj.body
 
     def _on_mouse_release(self, gesture, data, x, y):
+        self.sim_can_sleep = True
         if self.holding_body:
             distance = (
                 clamp(
@@ -178,6 +184,12 @@ class PhysicsSpace:
         if abs(body.angular_velocity > max_angular_velocity):
             body.angular_velocity = body.angular_velocity * 0.8
 
+        # Finally, velocity close to 0 should be set to 0
+        if body.velocity.length < 0.25:
+            body.velocity = (0, 0)
+        if body.angular_velocity < 0.001:
+            body.angular_velocity = 0
+    
     def update(self, step: float):
         if self.holding_body is not None:
             distance = (
@@ -195,8 +207,20 @@ class PhysicsSpace:
                 self.holding_body.position,
             )
 
-        self.physics_space.step(step)
-        self.canvas.queue_draw()
+        # TODO: If nothing is happening, we want to skip updating the sim
+        is_anything_moving = False
+
+        for object in self.physics_objects:
+            assert object._body
+            if object._body.velocity.length != 0 or object._body.angular_velocity != 0:
+                is_anything_moving = True
+
+        if not is_anything_moving and self.sim_can_sleep:
+            self.sim_sleep = True
+        
+        if not self.sim_sleep:
+            self.physics_space.step(step)
+            self.canvas.queue_draw()
 
     def setup_window(self):
         LayerShell.init_for_window(self.window)
@@ -303,7 +327,9 @@ class Client:
             space.setup_drawing_area()
             space.setup_physics_space()
 
-            app.add_window(window)
+            app.add_window(window)            
+
+            GLib.Thread.new("physics", self.physics_update)
             window.present()
 
     def start(self):
@@ -311,7 +337,4 @@ class Client:
 
         app = Gtk.Application()
         app.connect("activate", self.on_activate)
-
-        GLib.Thread.new("physics", func=self.physics_update)
-
         app.run()
