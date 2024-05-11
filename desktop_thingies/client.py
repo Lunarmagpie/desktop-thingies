@@ -72,12 +72,15 @@ class PhysicsSpace:
     monitor: Gdk.Monitor
     window: Gtk.Window
     canvas: Canvas
+
     physics_space: pymunk.Space
     physics_objects: list[PhysicsObject]
 
     holding_body: pymunk.Body | None = None
+    is_initialized: bool = False
 
     mouse_position: tuple[int, int] = (0, 0)
+    sim_lock: threading.Semaphore = dataclasses.field(default_factory=threading.BoundedSemaphore)
 
     SCALE = 10
     CLICK_TOLERANCE = 1
@@ -85,7 +88,7 @@ class PhysicsSpace:
 
     sim_sleep = False
     sim_can_sleep = True
-    
+
     def __post_init__(self):
         geometry = self.monitor.get_geometry()
         self.geometry = Vec2(
@@ -94,8 +97,10 @@ class PhysicsSpace:
         )
 
     def _draw(self, snapshot: Gtk.Snapshot):
+        self.sim_lock.acquire()
         for obj in self.physics_objects:
             assert obj._body
+            snapshot.save()
             angle = math.degrees(obj._body.angle)
 
             pos = obj._body.position
@@ -104,34 +109,30 @@ class PhysicsSpace:
                     pos.x * SIMULATION_SCALE, pos.y * SIMULATION_SCALE
                 )
             )
-            snapshot.rotate(-angle)
-
+            snapshot.rotate(angle)
             obj.render_onto(snapshot)
 
-            snapshot.rotate(angle)
-            snapshot.translate(
-                Graphene.Point().init(
-                    -pos.x * SIMULATION_SCALE, -pos.y * SIMULATION_SCALE
-                )
-            )
-        # Program possibly isn't yielding thread?
-        time.sleep(0.0001)
+            snapshot.restore()
+        self.sim_lock.release()
 
     def _on_mouse_click(self, gesture, data, x, y):
         self.sim_sleep = False
         self.sim_can_sleep = False
         if self.holding_body != None:
             return
+        self.sim_lock.acquire()
         for obj in self.physics_space.shapes:
             if (
                 obj.point_query((x / SIMULATION_SCALE, y / SIMULATION_SCALE)).distance
                 <= self.CLICK_TOLERANCE
             ):
                 self.holding_body = obj.body
+        self.sim_lock.release()
 
     def _on_mouse_release(self, gesture, data, x, y):
         self.sim_can_sleep = True
         if self.holding_body:
+            self.sim_lock.acquire()
             distance = (
                 clamp(
                     self.mouse_position[0] / SIMULATION_SCALE
@@ -149,6 +150,7 @@ class PhysicsSpace:
                 (distance[0] * (1 / 0.3) * 4, distance[1] * (1 / 0.3) * 4),
                 self.holding_body.position,
             )
+            self.sim_lock.release()
 
             self.holding_body = None
 
@@ -164,6 +166,13 @@ class PhysicsSpace:
             y = self.geometry.height - SMALLER_BOUND
         self.mouse_position = (x, y)
 
+    def _on_after_paint(self, user_data):
+        if not self.sim_sleep:
+            self.canvas.queue_draw()
+        # wait a slightly long time to help with performance
+        time.sleep(0.02)
+        self.window.get_frame_clock().request_phase(Gdk.FrameClockPhase.PAINT)
+    
     def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 500
         max_angular_velocity = 1.5
@@ -189,8 +198,11 @@ class PhysicsSpace:
             body.velocity = (0, 0)
         if body.angular_velocity < 0.001:
             body.angular_velocity = 0
-    
+
     def update(self, step: float):
+        if not self.is_initialized:
+            return
+
         if self.holding_body is not None:
             distance = (
                 self.mouse_position[0] / SIMULATION_SCALE
@@ -202,10 +214,12 @@ class PhysicsSpace:
             x = distance[0] * (1 / 0.3) * 2
             y = distance[1] * (1 / 0.3) * 2
 
+            self.sim_lock.acquire()
             self.holding_body.apply_impulse_at_world_point(
                 (x, y),
                 self.holding_body.position,
             )
+            self.sim_lock.release()
 
         # TODO: If nothing is happening, we want to skip updating the sim
         is_anything_moving = False
@@ -217,10 +231,9 @@ class PhysicsSpace:
 
         if not is_anything_moving and self.sim_can_sleep:
             self.sim_sleep = True
-        
+
         if not self.sim_sleep:
             self.physics_space.step(step)
-            self.canvas.queue_draw()
 
     def setup_window(self):
         LayerShell.init_for_window(self.window)
@@ -229,7 +242,6 @@ class PhysicsSpace:
         LayerShell.set_monitor(self.window, self.monitor)
 
         self.window.set_default_size(self.geometry.width, self.geometry.height)
-
         self.window.set_child(self.canvas)
 
         # Mouse events
@@ -240,7 +252,13 @@ class PhysicsSpace:
 
         move_event = Gtk.EventControllerMotion.new()
         move_event.connect("motion", self._on_mouse_move)
+        
         self.window.add_controller(move_event)
+
+        self.window.present()
+
+        frame_clock = self.window.get_frame_clock()
+        frame_clock.connect("after_paint", self._on_after_paint)
 
     def setup_drawing_area(self):
         self.canvas.draw_func = self._draw
@@ -275,6 +293,8 @@ class PhysicsSpace:
             ),
         )
 
+        self.is_initialized = True
+
 
 @dataclasses.dataclass
 class Client:
@@ -289,11 +309,12 @@ class Client:
             # but pymunk seems to segfault if you call the function again before the
             # step time is over.
             STEP = 1.0 / (self.target_framerate or 60)
+            STEP = 0.02
 
             for space in self._spaces:
                 space.update(STEP)
 
-            time.sleep(STEP * 1.01)
+            time.sleep(STEP)
 
     def on_activate(self, app):
         provider = Gtk.CssProvider()
@@ -323,18 +344,17 @@ class Client:
             space = PhysicsSpace(monitor, window, canvas, physics_space, objects)
             self._spaces += [space]
 
-            space.setup_window()
             space.setup_drawing_area()
+            space.setup_window()
             space.setup_physics_space()
 
-            app.add_window(window)            
+            app.add_window(window)
 
-            GLib.Thread.new("physics", self.physics_update)
-            window.present()
 
     def start(self):
         self.space = pymunk.Space()
 
         app = Gtk.Application()
         app.connect("activate", self.on_activate)
+        GLib.Thread.new("physics", self.physics_update)
         app.run()
