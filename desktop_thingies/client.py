@@ -72,6 +72,7 @@ class PhysicsSpace:
     monitor: Gdk.Monitor
     window: Gtk.Window
     canvas: Canvas
+    target_framerate: int | None
 
     physics_space: pymunk.Space
     physics_objects: list[PhysicsObject]
@@ -167,6 +168,21 @@ class PhysicsSpace:
             y = self.geometry.height - SMALLER_BOUND
         self.mouse_position = (x, y)
 
+    def _on_after_paint(self, _):
+        STEP = 1 / (self.target_framerate or 60)
+
+        frame_clock = self.window.get_frame_clock()
+
+        self.update(STEP)
+
+        # If the window is sleeping we don't need to update the sim or visuals.
+        # GTK will send another update tick once we intereact with an object which
+        # will cause the sim to update.
+        if not self.sim_sleep:
+            time.sleep(STEP)
+            # Schedule a new frame now that this one is over.
+            frame_clock.begin_updating()
+
     def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 500
         max_angular_velocity = 1.5
@@ -218,7 +234,7 @@ class PhysicsSpace:
         # TODO: If nothing is happening, we want to skip updating the sim
         is_anything_moving = False
 
-        if not self.sim_sleep and self.sim_can_sleep:
+        if self.sim_can_sleep:
             for object in self.physics_objects:
                 if (
                     object._body.velocity.length != 0
@@ -250,10 +266,11 @@ class PhysicsSpace:
 
         move_event = Gtk.EventControllerMotion.new()
         move_event.connect("motion", self._on_mouse_move)
-
         self.window.add_controller(move_event)
 
         self.window.present()
+
+        self.window.get_frame_clock().connect("after_paint", self._on_after_paint)
 
     def setup_drawing_area(self):
         self.canvas.draw_func = self._draw
@@ -294,19 +311,6 @@ class Client:
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
-    def _on_after_paint(self, _, user_data):
-        STEP = 1 / (self.target_framerate or 60)
-
-        frame_clock = user_data.get_frame_clock()
-
-        for space in self._spaces:
-            space.update(STEP)
-
-        time.sleep(STEP)
-
-        # Schedule a new frame now that this one is over.
-        frame_clock.begin_updating()
-
     def on_activate(self, app):
         provider = Gtk.CssProvider()
         provider.load_from_data(THEME, len(THEME))
@@ -326,7 +330,7 @@ class Client:
             canvas = Canvas()
             window = Gtk.ApplicationWindow()
 
-            space = PhysicsSpace(monitor, window, canvas, physics_space, self.objects)
+            space = PhysicsSpace(monitor, window, canvas, self.target_framerate, physics_space, self.objects)
             self._spaces += [space]
 
             space.setup_drawing_area()
@@ -334,11 +338,6 @@ class Client:
             space.setup_physics_space()
 
             app.add_window(window)
-
-            window.get_frame_clock().connect(
-                "after_paint", self._on_after_paint, window
-            )
-
             # We only run one window to prevent bugs (i am lazy af)
             break
         else:
