@@ -107,7 +107,7 @@ class PhysicsSpace:
     @staticmethod
     def limit_velocity(body, gravity, damping, dt):
         max_velocity = 1000
-        max_angular_velocity = 500
+        max_angular_velocity = 250
         pymunk.Body.update_velocity(body, gravity, damping, dt)
 
         # No matter what apply friction
@@ -131,9 +131,9 @@ class PhysicsSpace:
                 - self.holding_body.position[1],
             )
 
-            if self.holding_body.velocity.length < 800:
+            if self.holding_body.velocity.length < 600:
                 self.holding_body.apply_impulse_at_world_point(
-                    (min(distance[0], 100), min(distance[1], 100)), (0, 0)
+                    (min(distance[0] / 2, 50), min(distance[1] / 2, 50)), (0, 0)
                 )
 
         self.physics_space.step(step)
@@ -200,22 +200,16 @@ class Client:
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
     def physics_update(self):
-        # https://stackoverflow.com/questions/16301193/whats-the-proper-way-to-write-a-game-loop-in-python
-        lastFrameTime  = time.time()
         while True:
-            currentTime = time.time()
-            dt = currentTime - lastFrameTime
-            lastFrameTime = currentTime
-            
+            # Techinically this puts the framerate a little below the target,
+            # but pymunk seems to segfault if you call the function again before the
+            # step time is over.
+            STEP = 1. / (self.target_framerate or 60)
+
             for space in self._spaces:
-                STEP = dt
-                time.sleep(STEP)
                 space.update(STEP)
 
-            if target_framerate:
-                sleepTime = 1/FPS - (currentTime - lastFrameTime)
-                if sleepTime > 0:
-                    time.sleep(sleepTime)
+            time.sleep(STEP)
 
 
     def on_activate(self, app):
