@@ -23,13 +23,14 @@ window.background {
 
 def add_box(space: pymunk.Space, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
     WALL_WIDTH = 1000
+    WALL_OFFSET = 2
     x0, y0 = p0
     x1, y1 = p1
     ps = [
-        (x0 - WALL_WIDTH, y0 - WALL_WIDTH),
-        (x1 + WALL_WIDTH, y0 - WALL_WIDTH),
-        (x1 + WALL_WIDTH, y1 + WALL_WIDTH),
-        (x0 - WALL_WIDTH, y1 + WALL_WIDTH),
+        (x0 - WALL_WIDTH - WALL_OFFSET, y0 - WALL_WIDTH - WALL_OFFSET),
+        (x1 + WALL_WIDTH + WALL_OFFSET, y0 - WALL_WIDTH - WALL_OFFSET),
+        (x1 + WALL_WIDTH + WALL_OFFSET, y1 + WALL_WIDTH + WALL_OFFSET),
+        (x0 - WALL_WIDTH - WALL_OFFSET, y1 + WALL_WIDTH + WALL_OFFSET),
     ]
     for i in range(4):
         segment = pymunk.Segment(space.static_body, ps[i], ps[(i + 1) % 4], WALL_WIDTH)
@@ -76,8 +77,12 @@ class PhysicsSpace:
     CLICK_TOLERANCE = 1
     has_saved = False
 
+    def __post_init__(self):
+        self.geometry = self.monitor.get_geometry()
+
     def _draw(self, snapshot: Gtk.Snapshot):
         for obj in self.physics_objects:
+            assert obj._body
             angle = math.degrees(obj._body.angle)
 
             pos = obj._body.position
@@ -132,6 +137,15 @@ class PhysicsSpace:
             self.holding_body = None
 
     def _on_mouse_move(self, motion, x, y):
+        SMALLER_BOUND = 5
+        if x < SMALLER_BOUND:
+            x = SMALLER_BOUND
+        if x > self.geometry.width - SMALLER_BOUND:
+            x = self.geometry.width - SMALLER_BOUND
+        if y < SMALLER_BOUND:
+            y = SMALLER_BOUND
+        if y > self.geometry.height - SMALLER_BOUND:
+            y = self.geometry.height - SMALLER_BOUND
         self.mouse_position = (x, y)
 
     def limit_velocity(self, body, gravity, damping, dt):
@@ -163,8 +177,11 @@ class PhysicsSpace:
                 - self.holding_body.position[1],
             )
 
+            x = distance[0] * (1 / 0.3) * 2
+            y = distance[1] * (1 / 0.3) * 2
+
             self.holding_body.apply_impulse_at_world_point(
-                (distance[0] * (1 / 0.3) * 2, distance[1] * (1 / 0.3) * 2),
+                (x, y),
                 self.holding_body.position,
             )
 
@@ -172,14 +189,12 @@ class PhysicsSpace:
         self.canvas.queue_draw()
 
     def setup_window(self):
-        geometry = self.monitor.get_geometry()
-
         LayerShell.init_for_window(self.window)
         LayerShell.set_layer(self.window, LayerShell.Layer.BACKGROUND)
         LayerShell.set_keyboard_mode(self.window, LayerShell.KeyboardMode.NONE)
         LayerShell.set_monitor(self.window, self.monitor)
 
-        self.window.set_default_size(geometry.width, geometry.height)
+        self.window.set_default_size(self.geometry.width, self.geometry.height)
 
         self.window.set_child(self.canvas)
 
@@ -197,19 +212,21 @@ class PhysicsSpace:
         self.canvas.draw_func = self._draw
 
     def setup_physics_space(self):
-        geometry = self.monitor.get_geometry()
         self.physics_space.gravity = (0, 0)
         self.physics_space
 
         for shape in self.physics_objects:
+            assert shape._body
+            assert shape._physics_shape
+
             shape.initiate()
 
             self.physics_space.add(shape._body)
             self.physics_space.add(shape._physics_shape)
 
             shape._body.position = pymunk.Vec2d(
-                random.randrange(0, geometry.width / SIMULATION_SCALE),
-                random.randrange(0, geometry.height / SIMULATION_SCALE),
+                random.randrange(0, self.geometry.width / SIMULATION_SCALE),
+                random.randrange(0, self.geometry.height / SIMULATION_SCALE),
             )
             shape._body.angle = random.random() * math.pi * 2
             shape._body.velocity_func = self.limit_velocity
@@ -218,7 +235,10 @@ class PhysicsSpace:
         add_box(
             self.physics_space,
             (0, 0),
-            (geometry.width / SIMULATION_SCALE, geometry.height / SIMULATION_SCALE),
+            (
+                self.geometry.width / SIMULATION_SCALE,
+                self.geometry.height / SIMULATION_SCALE,
+            ),
         )
 
 
