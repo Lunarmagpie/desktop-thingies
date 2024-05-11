@@ -106,7 +106,7 @@ class PhysicsSpace:
 
     @staticmethod
     def limit_velocity(body, gravity, damping, dt):
-        max_velocity = 1000
+        max_velocity = 500
         max_angular_velocity = 250
         pymunk.Body.update_velocity(body, gravity, damping, dt)
 
