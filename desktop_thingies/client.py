@@ -99,6 +99,16 @@ class PhysicsSpace:
                 self.holding_body = obj.body
 
     def _on_mouse_release(self, gesture, data, x, y):
+        if self.holding_body:
+            distance = (
+                self.mouse_position[0] / SIMULATION_SCALE
+                - self.holding_body.position[0],
+                self.mouse_position[1] / SIMULATION_SCALE
+                - self.holding_body.position[1],
+            )
+            self.holding_body.apply_impulse_at_world_point(
+                (distance[0] * 50, distance[1] * 50), self.holding_body.position
+            )
         self.holding_body = None
 
     def _on_mouse_move(self, motion, x, y):
