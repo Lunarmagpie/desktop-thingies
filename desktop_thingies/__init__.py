@@ -1,3 +1,4 @@
+import argparse
 import ctypes
 import os
 from pathlib import Path
@@ -29,11 +30,28 @@ __all__ = (
 
 
 def main():
-    if len(sys.argv) < 1:
-        raise
+    parser = argparse.ArgumentParser(
+        prog="desktop-thingies", description="Add objects to your desktop."
+    )
 
-    path = Path(sys.argv[1])
+    parser.add_argument("-c", "--config", help="The python file to use as the config file.")
 
-    sys.path.append(str(path.parent))
-    config = importlib.import_module(path.name.removesuffix(".py"))
+    args = parser.parse_args()
+
+    config = args.config
+    if not config:
+        if config_path := os.environ.get("XDG_CONFIG_HOME"):
+            config = Path(config) / "desktop-thingies" / "config.py"
+        else:
+            config = Path(os.environ["HOME"]) / ".config" / "desktop-thingies" / "config.py"
+    else:
+        config = Path(args.config)
+
+    sys.path.append(str(config.parent))
+    try:
+        config = importlib.import_module(config.name.removesuffix(".py"))
+    except:
+        print(f"Config file '{str(config)}' not found.")
+        exit(1)
+    
     Client(config.objects, target_framerate=getattr(config, "framerate", None)).start()
