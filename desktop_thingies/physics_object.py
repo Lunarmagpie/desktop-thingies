@@ -64,16 +64,16 @@ class Texture(PhysicsObject):
 
 @dataclasses.dataclass
 class Circle(PhysicsObject):
-    radius: int = dataclasses.field(kw_only=True)
+    radius: float = dataclasses.field(kw_only=True)
     color: str = dataclasses.field(kw_only=True)
 
     def __post_init__(self):
         self._physics_shape = pymunk.Circle(
-            pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, self.radius)),
+            pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, self.radius / SIMULATION_SCALE)),
             radius=self.radius / SIMULATION_SCALE,
         )
         self._body = self._physics_shape.body
-        self._gtk_color = Gtk.Color()
+        self._gtk_color = Gdk.RGBA()
         self._gtk_color.parse(self.color)
 
     def render_onto(self, snapshot: Gtk.Snapshot):
@@ -87,17 +87,20 @@ class Circle(PhysicsObject):
         rounded_rect = Gsk.RoundedRect()
         rounded_rect.init_from_rect(rect, radius=90)
         snapshot.push_rounded_clip(rounded_rect)
-        snapshot.append_color(self.color, rect)
+        snapshot.append_color(self._gtk_color, rect)
         snapshot.pop()
 
 
 @dataclasses.dataclass
 class Rectangle(PhysicsObject):
-    width: int = dataclasses.field(kw_only=True)
-    height: int = dataclasses.field(kw_only=True)
+    width: float = dataclasses.field(kw_only=True)
+    height: float= dataclasses.field(kw_only=True)
     color: str = dataclasses.field(kw_only=True)
 
     def __post_init__(self):
+        self.width /= SIMULATION_SCALE
+        self.height /= SIMULATION_SCALE
+        
         self._physics_shape = pymunk.Poly(
             pymunk.Body(
                 self.mass, pymunk.moment_for_box(self.mass, (self.width, self.height))
@@ -110,7 +113,7 @@ class Rectangle(PhysicsObject):
             ],
         )
         self._body = self._physics_shape.body
-        self._gtk_color = Gtk.Color()
+        self._gtk_color = Gdk.RGBA()
         self._gtk_color.parse(self.color)
 
     def render_onto(self, snapshot: Gtk.Snapshot):
@@ -120,4 +123,4 @@ class Rectangle(PhysicsObject):
             self.width * SIMULATION_SCALE,
             self.height * SIMULATION_SCALE,
         )
-        snapshot.append_color(self.color, rect)
+        snapshot.append_color(self._gtk_color, rect)
