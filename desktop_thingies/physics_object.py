@@ -70,9 +70,10 @@ class Circle(PhysicsObject):
     color: str = dataclasses.field(kw_only=True, default="#000000")
 
     def __post_init__(self):
+        self.radius /= SIMULATION_SCALE
         self._physics_shape = pymunk.Circle(
             pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, self.radius / SIMULATION_SCALE)),
-            radius=self.radius / SIMULATION_SCALE,
+            radius=self.radius,
         )
         self._body = self._physics_shape.body
         self._gtk_color = Gdk.RGBA()
@@ -87,7 +88,7 @@ class Circle(PhysicsObject):
         )
 
         rounded_rect = Gsk.RoundedRect()
-        rounded_rect.init_from_rect(rect, radius=90)
+        rounded_rect.init_from_rect(rect, radius=self.radius * SIMULATION_SCALE)
         snapshot.push_rounded_clip(rounded_rect)
         snapshot.append_color(self._gtk_color, rect)
         snapshot.pop()

@@ -354,8 +354,6 @@ class Client:
         for monitor in display.get_monitors():
             if self.monitor and monitor.get_connector() != self.monitor:
                 continue
-            print(self.monitor)
-            print(monitor.get_connector())
 
             # These are the objects that will be intereacted with by the engines
             physics_space = pymunk.Space(threaded=False)
