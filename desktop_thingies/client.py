@@ -36,7 +36,7 @@ def add_box(
     d: int = 4,
 ):
     WALL_WIDTH = 1000
-    WALL_OFFSET = 2
+    WALL_OFFSET = 0
     x0, y0 = p0
     x1, y1 = p1
     ps = [
