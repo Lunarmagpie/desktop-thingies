@@ -96,7 +96,6 @@ class PhysicsSpace:
     )
 
     SCALE = 10
-    CLICK_TOLERANCE = 1
     has_saved = False
 
     sim_sleep = False
@@ -133,12 +132,12 @@ class PhysicsSpace:
         if self.holding_body != None:
             return
         self.sim_lock.acquire()
-        for obj in self.physics_space.shapes:
+        for obj in self.physics_objects:
             if (
-                obj.point_query((x / SIMULATION_SCALE, y / SIMULATION_SCALE)).distance
-                <= self.CLICK_TOLERANCE
+                obj._physics_shape.point_query((x / SIMULATION_SCALE, y / SIMULATION_SCALE)).distance
+                <= obj.pickup_distance / SIMULATION_SCALE
             ):
-                self.holding_body = obj.body
+                self.holding_body = obj._body
         self.sim_lock.release()
 
     def _on_mouse_release(self, gesture, data, x, y):

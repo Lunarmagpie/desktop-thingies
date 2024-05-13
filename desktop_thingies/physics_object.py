@@ -16,6 +16,8 @@ class PhysicsObject(ABC):
     """The friction of the object"""
     elasticity: float = dataclasses.field(kw_only=True, default=0.85)
     """The elasticity of the object"""
+    pickup_distance: float= dataclasses.field(kw_only=True, default=10)
+    """How many pixels the mouse can be from the object when you try to pick it up."""
 
     _physics_shape: pymunk.Shape = dataclasses.field(default=None)  # type: ignore
     _body: pymunk.Body = dataclasses.field(default=None)  # type: ignore
