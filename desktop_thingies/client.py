@@ -303,8 +303,7 @@ class PhysicsSpace:
         self.canvas.draw_func = self._draw
 
     def setup_physics_space(self):
-        self.physics_space.gravity = (0, 0)
-        self.physics_space
+        self.physics_space.gravity = self.gravity
 
         for shape in self.physics_objects:
             self.physics_space.add(shape._body)
@@ -388,8 +387,6 @@ class Client:
             raise Exception(f"Monitor {self.monitor} not found")
 
     def start(self):
-        self.space = pymunk.Space()
-
         app = Gtk.Application()
         app.connect("activate", self.on_activate)
         app.run()
