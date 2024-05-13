@@ -27,7 +27,14 @@ class Vec2(typing.NamedTuple):
     height: int
 
 
-def add_box(space: pymunk.Space, friction: float, elasticity: float, p0: tuple[int, int], p1: tuple[int, int], d: int = 4):
+def add_box(
+    space: pymunk.Space,
+    friction: float,
+    elasticity: float,
+    p0: tuple[int, int],
+    p1: tuple[int, int],
+    d: int = 4,
+):
     WALL_WIDTH = 1000
     WALL_OFFSET = 2
     x0, y0 = p0
@@ -67,7 +74,7 @@ class Canvas(Gtk.Widget):
         self.draw_func(snapshot)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class PhysicsSpace:
     monitor: Gdk.Monitor
     window: Gtk.Window
@@ -76,6 +83,7 @@ class PhysicsSpace:
 
     physics_space: pymunk.Space
     physics_objects: list[PhysicsObject]
+    gravity: tuple[float, float] = (0, 0)
     wall_friction: float = 0.5
     wall_elasticity: float = 0.5
 
@@ -92,7 +100,7 @@ class PhysicsSpace:
     has_saved = False
 
     sim_sleep = False
-    sim_can_sleep = True
+    sim_can_sleep = False
 
     def __post_init__(self):
         geometry = self.monitor.get_geometry()
@@ -281,7 +289,9 @@ class PhysicsSpace:
         move_event = Gtk.EventControllerMotion.new()
         move_event.connect("motion", self._on_mouse_move)
         self.window.add_controller(move_event)
-        scroll_event = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.VERTICAL)
+        scroll_event = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.VERTICAL
+        )
         scroll_event.connect("scroll", self._on_scroll)
         self.window.add_controller(scroll_event)
 
@@ -322,11 +332,12 @@ class PhysicsSpace:
         self.is_initialized = True
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class Client:
     objects: list[PhysicsObject]
     monitor: str | None = None
     target_framerate: int | None = None
+    gravity: tuple[float, float] = (0, 0)
     wall_friction: float = 0.5
     wall_elasticity: float = 0.5
 
@@ -353,7 +364,17 @@ class Client:
             canvas = Canvas()
             window = Gtk.ApplicationWindow()
 
-            space = PhysicsSpace(monitor, window, canvas, self.target_framerate, physics_space, self.objects, self.wall_friction, self.wall_elasticity)
+            space = PhysicsSpace(
+                monitor=monitor,
+                window=window,
+                canvas=canvas,
+                target_framerate=self.target_framerate,
+                physics_space=physics_space,
+                physics_objects=self.objects,
+                gravity=self.gravity,
+                wall_friction=self.wall_friction,
+                wall_elasticity=self.wall_elasticity,
+            )
             self._spaces += [space]
 
             space.setup_drawing_area()
