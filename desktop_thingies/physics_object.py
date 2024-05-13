@@ -44,8 +44,8 @@ class Texture(PhysicsObject):
             * self.scale
         )
         self._physics_shape = pymunk.Circle(
-            pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, radius)),
-            radius=radius,
+            pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, radius * self.collision_scale)),
+            radius=radius * self.collision_scale,
         )
 
         self._body = self._physics_shape.body
