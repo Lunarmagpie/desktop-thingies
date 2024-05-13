@@ -31,6 +31,8 @@ class Texture(PhysicsObject):
     """The path to a PNG image to use as the texture for this obejct"""
     scale: float = dataclasses.field(kw_only=True, default=1)
     """Amount to scale the image."""
+    collision_scale: float = dataclasses.field(kw_only=True, default=1)
+    """The size ofthe collison in comparision to the size of the image."""
 
     def __post_init__(self):
         self._gdk_texture = Gdk.Texture.new_from_filename(self.texture)
@@ -65,7 +67,7 @@ class Texture(PhysicsObject):
 @dataclasses.dataclass
 class Circle(PhysicsObject):
     radius: float = dataclasses.field(kw_only=True)
-    color: str = dataclasses.field(kw_only=True)
+    color: str = dataclasses.field(kw_only=True, default="#000000")
 
     def __post_init__(self):
         self._physics_shape = pymunk.Circle(
@@ -95,7 +97,7 @@ class Circle(PhysicsObject):
 class Rectangle(PhysicsObject):
     width: float = dataclasses.field(kw_only=True)
     height: float= dataclasses.field(kw_only=True)
-    color: str = dataclasses.field(kw_only=True)
+    color: str = dataclasses.field(kw_only=True, default="#000000")
 
     def __post_init__(self):
         self.width /= SIMULATION_SCALE
