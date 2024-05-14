@@ -126,23 +126,37 @@ class PhysicsSpace:
             snapshot.restore()
         self.sim_lock.release()
 
+    def check_hovered_object(self, x, y) -> pymunk.Body | None:
+        if self.holding_body:
+            self.canvas.set_cursor_from_name("grabbing")
+            return self.holding_body
+        self.sim_lock.acquire()
+        for obj in self.physics_objects:
+            if (
+                obj._physics_shape.point_query(
+                    (x / SIMULATION_SCALE, y / SIMULATION_SCALE)
+                ).distance
+                <= obj.pickup_distance / SIMULATION_SCALE
+            ):
+                self.canvas.set_cursor_from_name("grab")
+                self.sim_lock.release()
+                return obj
+        self.canvas.set_cursor_from_name("default")
+        self.sim_lock.release()
+        return None
+
     def _on_mouse_click(self, gesture, data, x, y):
         self.sim_sleep = False
         self.sim_can_sleep = False
         if self.holding_body != None:
             return
-        self.sim_lock.acquire()
-        for obj in self.physics_objects:
-            if (
-                obj._physics_shape.point_query((x / SIMULATION_SCALE, y / SIMULATION_SCALE)).distance
-                <= obj.pickup_distance / SIMULATION_SCALE
-            ):
-                self.holding_body = obj._body
-        self.sim_lock.release()
+        self.holding_body = getattr(self.check_hovered_object(x, y), "_body", None)
+        if self.holding_body:
+            self.canvas.set_cursor_from_name("grabbing")
 
     def _on_mouse_release(self, gesture, data, x, y):
         self.sim_can_sleep = True
-        if self.holding_body:
+        if self.holding_body != None:
             self.sim_lock.acquire()
             distance = (
                 clamp(
@@ -162,8 +176,8 @@ class PhysicsSpace:
                 self.holding_body.position,
             )
             self.sim_lock.release()
-
             self.holding_body = None
+            self.check_hovered_object(x, y)
 
     def _on_mouse_move(self, motion, x, y):
         SMALLER_BOUND = 5
@@ -176,6 +190,7 @@ class PhysicsSpace:
         if y > self.geometry.height - SMALLER_BOUND:
             y = self.geometry.height - SMALLER_BOUND
         self.mouse_position = (x, y)
+        self.check_hovered_object(x, y)
 
     def _on_scroll(self, event, x, y):
         if self.holding_body:
