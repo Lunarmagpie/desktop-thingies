@@ -153,6 +153,8 @@ class PhysicsSpace:
         self.holding_body = getattr(self.check_hovered_object(x, y), "_body", None)
         if self.holding_body:
             self.canvas.set_cursor_from_name("grabbing")
+            frame_clock = self.window.get_frame_clock()
+            frame_clock.begin_updating()
 
     def _on_mouse_release(self, gesture, data, x, y):
         self.sim_can_sleep = True
