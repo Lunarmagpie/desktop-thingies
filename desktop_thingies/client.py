@@ -272,7 +272,7 @@ class PhysicsSpace:
 
     def setup_window(self):
         LayerShell.init_for_window(self.window)
-        LayerShell.set_layer(self.window, LayerShell.Layer.BACKGROUND)
+        LayerShell.set_layer(self.window, LayerShell.Layer.BOTTOM)
         LayerShell.set_keyboard_mode(self.window, LayerShell.KeyboardMode.NONE)
         LayerShell.set_monitor(self.window, self.monitor)
 
