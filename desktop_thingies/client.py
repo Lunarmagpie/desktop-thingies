@@ -86,6 +86,11 @@ class PhysicsSpace:
     gravity: tuple[float, float] = (0, 0)
     wall_friction: float = 0.5
     wall_elasticity: float = 0.5
+    top_offset: int = 0
+    bottom_offset: int = 0
+    left_offset: int = 0
+    right_offset: int = 0
+
 
     holding_body: pymunk.Body | None = None
     is_initialized: bool = False
@@ -183,14 +188,14 @@ class PhysicsSpace:
 
     def _on_mouse_move(self, motion, x, y):
         SMALLER_BOUND = 5
-        if x < SMALLER_BOUND:
-            x = SMALLER_BOUND
-        if x > self.geometry.width - SMALLER_BOUND:
-            x = self.geometry.width - SMALLER_BOUND
-        if y < SMALLER_BOUND:
-            y = SMALLER_BOUND
-        if y > self.geometry.height - SMALLER_BOUND:
-            y = self.geometry.height - SMALLER_BOUND
+        if x < SMALLER_BOUND + self.left_offset:
+            x = SMALLER_BOUND + self.left_offset
+        if x > self.geometry.width - SMALLER_BOUND - self.right_offset:
+            x = self.geometry.width - SMALLER_BOUND - self.right_offset
+        if y < SMALLER_BOUND + self.bottom_offset:
+            y = SMALLER_BOUND + self.bottom_offset
+        if y > self.geometry.height - SMALLER_BOUND - self.top_offset:
+            y = self.geometry.height - SMALLER_BOUND - self.top_offset
         self.mouse_position = (x, y)
         self.check_hovered_object(x, y)
 
@@ -337,10 +342,10 @@ class PhysicsSpace:
             self.physics_space,
             self.wall_elasticity,
             self.wall_friction,
-            (0, 0),
+            (self.left_offset, self.top_offset),
             (
-                self.geometry.width / SIMULATION_SCALE,
-                self.geometry.height / SIMULATION_SCALE,
+                (self.geometry.width - self.right_offset) / SIMULATION_SCALE,
+                (self.geometry.height - self.bottom_offset)  / SIMULATION_SCALE,
             ),
         )
 
@@ -355,6 +360,10 @@ class Client:
     gravity: tuple[float, float] = (0, 0)
     wall_friction: float = 0.5
     wall_elasticity: float = 0.5
+    top_offset: int = 0
+    bottom_offset: int = 0
+    left_offset: int = 0
+    right_offset: int = 0
 
     _spaces: list[PhysicsSpace] = dataclasses.field(default_factory=list)
 
@@ -387,6 +396,10 @@ class Client:
                 gravity=self.gravity,
                 wall_friction=self.wall_friction,
                 wall_elasticity=self.wall_elasticity,
+                top_offset=self.top_offset,
+                bottom_offset=self.bottom_offset,
+                left_offset=self.left_offset,
+                right_offset=self.right_offset,
             )
             self._spaces += [space]
 

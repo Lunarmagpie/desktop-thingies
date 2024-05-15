@@ -65,4 +65,8 @@ def main():
         gravity=getattr(config, "gravity", (0,0)),
         wall_elasticity=getattr(config, "wall_elasticity", 0.5),
         wall_friction=getattr(config, "wall_friction", 0.5),
+        top_offset=getattr(config, "top_offset", 0),
+        bottom_offset=getattr(config, "bottom_offset", 0),
+        left_offset=getattr(config, "left_offset", 0),
+        right_offset=getattr(config, "right_offset", 0),
     ).start()
