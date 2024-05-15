@@ -342,7 +342,7 @@ class PhysicsSpace:
             self.physics_space,
             self.wall_elasticity,
             self.wall_friction,
-            (self.left_offset, self.top_offset),
+            (self.left_offset / SIMULATION_SCALE, self.top_offset / SIMULATION_SCALE),
             (
                 (self.geometry.width - self.right_offset) / SIMULATION_SCALE,
                 (self.geometry.height - self.bottom_offset)  / SIMULATION_SCALE,
