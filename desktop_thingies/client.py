@@ -104,7 +104,7 @@ class PhysicsSpace:
     has_saved = False
 
     sim_sleep = False
-    sim_can_sleep = True
+    sim_can_sleep = False
 
     def __post_init__(self):
         geometry = self.monitor.get_geometry()
@@ -290,11 +290,12 @@ class PhysicsSpace:
 
         if not self.sim_sleep:
             self.physics_space.step(step)
+            self.sim_can_sleep = True    
             self.canvas.queue_draw()
 
     def setup_window(self):
         LayerShell.init_for_window(self.window)
-        LayerShell.set_layer(self.window, LayerShell.Layer.TOP)
+        LayerShell.set_layer(self.window, LayerShell.Layer.BOTTOM)
         LayerShell.set_keyboard_mode(self.window, LayerShell.KeyboardMode.NONE)
         LayerShell.set_monitor(self.window, self.monitor)
 
