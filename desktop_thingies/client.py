@@ -104,7 +104,7 @@ class PhysicsSpace:
     has_saved = False
 
     sim_sleep = False
-    sim_can_sleep = False
+    sim_frame = 0
 
     def __post_init__(self):
         geometry = self.monitor.get_geometry()
@@ -152,7 +152,6 @@ class PhysicsSpace:
 
     def _on_mouse_click(self, gesture, data, x, y):
         self.sim_sleep = False
-        self.sim_can_sleep = False
         if self.holding_body != None:
             return
         self.holding_body = getattr(self.check_hovered_object(x, y), "_body", None)
@@ -162,7 +161,6 @@ class PhysicsSpace:
             frame_clock.begin_updating()
 
     def _on_mouse_release(self, gesture, data, x, y):
-        self.sim_can_sleep = True
         if self.holding_body != None:
             self.sim_lock.acquire()
             distance = (
@@ -257,6 +255,7 @@ class PhysicsSpace:
             return
 
         if self.holding_body is not None:
+            self.sim_sleep = False
             distance = (
                 self.mouse_position[0] / SIMULATION_SCALE
                 - self.holding_body.position[0],
@@ -274,24 +273,22 @@ class PhysicsSpace:
             )
             self.sim_lock.release()
 
-        # TODO: If nothing is happening, we want to skip updating the sim
-        is_anything_moving = False
+        if not self.sim_sleep:
+            self.sim_frame += 1
+            self.sim_lock.acquire()
+            self.physics_space.step(step)
+            self.canvas.queue_draw()
 
-        if self.sim_can_sleep:
             for object in self.physics_objects:
+                # We need some time for buggy spawn collisions to resolve
+                if self.sim_frame > 200:
+                    self.sim_sleep = True
                 if (
                     object._body.velocity.length != 0
                     or object._body.angular_velocity != 0
                 ):
-                    is_anything_moving = True
-
-            if not is_anything_moving:
-                self.sim_sleep = True
-
-        if not self.sim_sleep:
-            self.physics_space.step(step)
-            self.sim_can_sleep = True    
-            self.canvas.queue_draw()
+                    self.sim_sleep = False
+            self.sim_lock.release()
 
     def setup_window(self):
         LayerShell.init_for_window(self.window)
