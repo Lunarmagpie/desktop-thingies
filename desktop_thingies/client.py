@@ -279,10 +279,9 @@ class PhysicsSpace:
             self.physics_space.step(step)
             self.canvas.queue_draw()
 
+            if self.sim_frame > 200:
+                self.sim_sleep = True
             for object in self.physics_objects:
-                # We need some time for buggy spawn collisions to resolve
-                if self.sim_frame > 200:
-                    self.sim_sleep = True
                 if (
                     object._body.velocity.length != 0
                     or object._body.angular_velocity != 0
