@@ -7,7 +7,7 @@ https://github.com/Lunarmagpie/desktop-thingies/assets/65521138/b44413ee-2ed3-43
 
 ```sh
 pip install git+https://github.com/Lunarmagpie/desktop_thingies/
-desktop-widgets -c config.py
+desktop-thingies -c config.py
 ```
 See "/examples/config.py" for configuration.
 
