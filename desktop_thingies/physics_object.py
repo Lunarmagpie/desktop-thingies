@@ -1,8 +1,10 @@
 import dataclasses
 from abc import ABC, abstractmethod
+import random
 
 import gi
 import pymunk
+from PIL import Image
 
 from desktop_thingies.constants import SIMULATION_SCALE
 from gi.repository import Gdk, Graphene, Gsk, Gtk  # type: ignore
@@ -37,7 +39,16 @@ class Texture(PhysicsObject):
     """The size ofthe collison in comparision to the size of the image."""
 
     def __post_init__(self):
-        self._gdk_texture = Gdk.Texture.new_from_filename(self.texture)
+        texture_file = Image.open(self.texture)
+        height, width = texture_file.size
+
+        uniq = str(map(random.choice, ["abcdefghijklmnopqrztuvwxyz"] * 10))
+        DEST = "/tmp/{uniq}.png"
+
+        texture_file.resize((int(height * self.scale), int(width * self.scale)))
+        texture_file.save(DEST)
+        
+        self._gdk_texture = Gdk.Texture.new_from_filename(DEST)
 
         radius = (
             min(self._gdk_texture.get_width(), self._gdk_texture.get_height())
