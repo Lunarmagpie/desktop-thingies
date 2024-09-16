@@ -13,7 +13,7 @@ import pymunk
 from desktop_thingies.constants import SIMULATION_SCALE
 from desktop_thingies.physics_object import PhysicsObject
 
-from gi.repository import Gdk, Graphene, Gtk, GLib, Gtk4LayerShell as LayerShell  # type: ignore
+from gi.repository import Gdk, Gsk, Graphene, Gtk, GLib, Gtk4LayerShell as LayerShell  # type: ignore
 
 THEME = """
 window.background {
@@ -119,13 +119,23 @@ class PhysicsSpace:
             snapshot.save()
             angle = math.degrees(obj._body.angle)
 
+            x_strech = max(1, (abs(obj._body.velocity.x) - 30) / 1000 + 1)
+            y_strech = max(1, (abs(obj._body.velocity.y) - 30) / 1000 + 1)
+
+            x_strech += abs(obj._body.angular_velocity) / 300
+            y_strech += abs(obj._body.angular_velocity) / 300
+
             pos = obj._body.position
+
             snapshot.translate(
                 Graphene.Point().init(
                     pos.x * SIMULATION_SCALE, pos.y * SIMULATION_SCALE
                 )
             )
+            snapshot.transform(Gsk.Transform.new().scale(x_strech, y_strech))
+
             snapshot.rotate(angle)
+
             obj.render_onto(snapshot)
 
             snapshot.restore()
