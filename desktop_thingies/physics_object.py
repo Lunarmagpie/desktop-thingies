@@ -43,9 +43,9 @@ class Texture(PhysicsObject):
         height, width = texture_file.size
 
         uniq = str(map(random.choice, ["abcdefghijklmnopqrztuvwxyz"] * 10))
-        DEST = "/tmp/{uniq}.png"
+        DEST = f"/tmp/{uniq}.png"
 
-        texture_file.resize((int(height * self.scale), int(width * self.scale)))
+        texture_file = texture_file.resize((int(height * self.scale), int(width * self.scale)))
         texture_file.save(DEST)
         
         self._gdk_texture = Gdk.Texture.new_from_filename(DEST)
@@ -54,7 +54,6 @@ class Texture(PhysicsObject):
             min(self._gdk_texture.get_width(), self._gdk_texture.get_height())
             / SIMULATION_SCALE
             / 2
-            * self.scale
         )
         self._physics_shape = pymunk.Circle(
             pymunk.Body(self.mass, pymunk.moment_for_circle(self.mass, 0, radius * self.collision_scale)),
@@ -67,10 +66,10 @@ class Texture(PhysicsObject):
 
     def render_onto(self, snapshot: Gtk.Snapshot):
         bounds = Graphene.Rect().init(
-            -self._gdk_texture.get_width() / 2 * self.scale,
-            -self._gdk_texture.get_height() / 2 * self.scale,
-            self._gdk_texture.get_width() * self.scale,
-            self._gdk_texture.get_height() * self.scale,
+            -self._gdk_texture.get_width() / 2,
+            -self._gdk_texture.get_height() / 2,
+            self._gdk_texture.get_width(),
+            self._gdk_texture.get_height(),
         )
         snapshot.append_scaled_texture(
             self._gdk_texture, Gsk.ScalingFilter.TRILINEAR, bounds
