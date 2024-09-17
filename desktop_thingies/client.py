@@ -122,8 +122,8 @@ class PhysicsSpace:
 
             x_strech = max(1, (abs(obj._body.velocity.x) - 20) / 1500 + 1)
             y_strech = max(1, (abs(obj._body.velocity.y) - 20) / 1500 + 1)
-            x_strech -= (y_strech - 1)
-            y_strech -= (x_strech - 1)
+            x_strech -= (y_strech - 1) / 2
+            y_strech -= (x_strech - 1) / 2
 
             x_diff = abs(obj._body.velocity.x - obj._last_velocity_x)
             y_diff = abs(obj._body.velocity.y - obj._last_velocity_y)
@@ -149,7 +149,7 @@ class PhysicsSpace:
                 y_strech = 1.05
 
             if abs(obj._body.angular_velocity) > 10:
-                y_strech += abs(obj._body.angular_velocity) / 300
+                y_strech += abs(obj._body.angular_velocity) / 500
 
             pos = obj._body.position
 
