@@ -120,19 +120,24 @@ class PhysicsSpace:
 
             angle = math.degrees(obj._body.angle)
 
-            x_strech = max(1, (abs(obj._body.velocity.x) - 30) / 1000 + 1)
-            y_strech = max(1, (abs(obj._body.velocity.y) - 30) / 1000 + 1)
+            x_strech = max(1, (abs(obj._body.velocity.x) - 20) / 1500 + 1)
+            y_strech = max(1, (abs(obj._body.velocity.y) - 20) / 1500 + 1)
+            x_strech -= (y_strech - 1)
+            y_strech -= (x_strech - 1)
 
             x_diff = abs(obj._body.velocity.x - obj._last_velocity_x)
             y_diff = abs(obj._body.velocity.y - obj._last_velocity_y)
 
-            if (obj._last_velocity_x > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1):
-                x_strech = max(0.5, 1 - (max(x_diff - 50, 1) / 800) ** .75)
-                obj._time_since_big_velocity = 0
+            if (
+                (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1)
+                or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1)
+            ):
+                STRETCH_MIN = 0.95
+                x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 20, 1) / 800) ** .85)
+                y_strech = max(STRETCH_MIN, 1 - (max(y_diff - 20, 1) / 800) ** .85)
 
-            if (obj._last_velocity_y > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1):
-                y_strech = max(0.5, 1 - (max(y_diff - 50, 1) / 800) ** .75)
-                obj._time_since_big_velocity = 0
+                x_strech += (1 - y_strech) 
+                y_strech += (1 - x_strech) 
 
             if x_strech > 1.5:
                 x_strech = 1.5
@@ -144,7 +149,6 @@ class PhysicsSpace:
                 y_strech = 1.05
 
             if abs(obj._body.angular_velocity) > 10:
-                x_strech += abs(obj._body.angular_velocity) / 300
                 y_strech += abs(obj._body.angular_velocity) / 300
 
             pos = obj._body.position
