@@ -27,7 +27,9 @@ class PhysicsObject(ABC):
     _last_velocity_x = 0
     _last_velocity_y = 0
 
-    _time_since_big_velocity = 0
+    _strech_scale_x = 0
+    _strech_scale_y = 0
+    _strech_time = 0
 
     @abstractmethod
     def render_onto(self, snapshot: Gtk.Snapshot):

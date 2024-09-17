@@ -120,24 +120,33 @@ class PhysicsSpace:
 
             angle = math.degrees(obj._body.angle)
 
-            x_strech = max(1, (abs(obj._body.velocity.x) - 20) / 1500 + 1)
-            y_strech = max(1, (abs(obj._body.velocity.y) - 20) / 1500 + 1)
+            x_strech = max(1, (abs(obj._body.velocity.x) - 70) / 1000 * .8 + 1)
+            y_strech = max(1, (abs(obj._body.velocity.y) - 70) / 1000 * .8 + 1)
             x_strech -= (y_strech - 1) / 2
             y_strech -= (x_strech - 1) / 2
 
             x_diff = abs(obj._body.velocity.x - obj._last_velocity_x)
             y_diff = abs(obj._body.velocity.y - obj._last_velocity_y)
 
-            if (
+            STRECH_TIME = 4
+            if (obj._strech_time > 0):
+                x_strech = 1 - (1 - obj._strech_scale_x) * (obj._strech_time / STRECH_TIME)
+                y_strech = 1 - (1 - obj._strech_scale_y) * (obj._strech_time / STRECH_TIME)
+                print(x_strech, y_strech)
+            elif (
                 (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1)
                 or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1)
             ):
-                STRETCH_MIN = 0.8
-                x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 20, 1) / 800) ** 1.5)
-                y_strech = max(STRETCH_MIN, 1 - (max(y_diff - 20, 1) / 800) ** 1.5)
+                STRETCH_MIN = 0.9
+                x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 10, 1) / 800) ** 1.8)
+                y_strech = max(STRETCH_MIN, 1 - (max(y_diff - 10, 1) / 800) ** 1.8)
 
                 x_strech += (1 - y_strech) 
-                y_strech += (1 - x_strech) 
+                y_strech += (1 - x_strech)
+
+                obj._strech_scale_x = x_strech
+                obj._strech_scale_y = y_strech
+                obj._strech_time = STRECH_TIME + 1
 
             if x_strech > 1.5:
                 x_strech = 1.5
@@ -168,6 +177,7 @@ class PhysicsSpace:
 
             obj._last_velocity_x = obj._body.velocity.x
             obj._last_velocity_y = obj._body.velocity.y
+            obj._strech_time -= 1
 
         self.sim_lock.release()
 
