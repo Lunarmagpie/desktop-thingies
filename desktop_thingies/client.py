@@ -128,16 +128,11 @@ class PhysicsSpace:
 
             if (obj._last_velocity_x > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1):
                 x_strech = max(0.5, 1 - (max(x_diff - 50, 1) / 800) ** .75)
-                print(x_strech)
                 obj._time_since_big_velocity = 0
 
             if (obj._last_velocity_y > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1):
                 y_strech = max(0.5, 1 - (max(y_diff - 50, 1) / 800) ** .75)
                 obj._time_since_big_velocity = 0
-
-            if abs(obj._body.angular_velocity) > 10:
-                x_strech += abs(obj._body.angular_velocity) / 300
-                y_strech += abs(obj._body.angular_velocity) / 300
 
             if x_strech > 1.5:
                 x_strech = 1.5
@@ -147,6 +142,10 @@ class PhysicsSpace:
             if (self.holding_body == obj._body):
                 x_strech = 1.05
                 y_strech = 1.05
+
+            if abs(obj._body.angular_velocity) > 10:
+                x_strech += abs(obj._body.angular_velocity) / 300
+                y_strech += abs(obj._body.angular_velocity) / 300
 
             pos = obj._body.position
 
