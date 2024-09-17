@@ -117,13 +117,35 @@ class PhysicsSpace:
         self.sim_lock.acquire()
         for obj in self.physics_objects:
             snapshot.save()
+
             angle = math.degrees(obj._body.angle)
 
             x_strech = max(1, (abs(obj._body.velocity.x) - 30) / 1000 + 1)
             y_strech = max(1, (abs(obj._body.velocity.y) - 30) / 1000 + 1)
 
-            x_strech += abs(obj._body.angular_velocity) / 300
-            y_strech += abs(obj._body.angular_velocity) / 300
+            if (obj._time_since_big_velocity >= 0):
+                x_diff = abs(obj._body.velocity.x - obj._last_velocity_x)
+                y_diff = abs(obj._body.velocity.y - obj._last_velocity_y)
+
+                if (obj._last_velocity_x > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1):
+                    x_strech = max(0.5, 1 - (max(x_diff - 50, 1) / 800) ** .75)
+                    print(x_strech)
+                    obj._time_since_big_velocity = 0
+
+                if (obj._last_velocity_y > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1):
+                    y_strech = max(0.5, 1 - (max(y_diff - 50, 1) / 800) ** .75)
+                    obj._time_since_big_velocity = 0
+
+            if abs(obj._body.angular_velocity) > 10:
+                x_strech += abs(obj._body.angular_velocity) / 300
+                y_strech += abs(obj._body.angular_velocity) / 300
+
+            if x_strech > 1.5:
+                x_strech = 1.5
+            if y_strech > 1.5:
+                y_strech = 1.5
+
+            obj._time_since_big_velocity += 1 
 
             pos = obj._body.position
 
@@ -139,6 +161,10 @@ class PhysicsSpace:
             obj.render_onto(snapshot)
 
             snapshot.restore()
+
+            obj._last_velocity_x = obj._body.velocity.x
+            obj._last_velocity_y = obj._body.velocity.y
+
         self.sim_lock.release()
 
     def check_hovered_object(self, x, y) -> pymunk.Body | None:

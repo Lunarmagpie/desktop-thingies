@@ -24,6 +24,11 @@ class PhysicsObject(ABC):
     _physics_shape: pymunk.Shape = dataclasses.field(default=None)  # type: ignore
     _body: pymunk.Body = dataclasses.field(default=None)  # type: ignore
 
+    _last_velocity_x = 0
+    _last_velocity_y = 0
+
+    _time_since_big_velocity = 0
+
     @abstractmethod
     def render_onto(self, snapshot: Gtk.Snapshot):
         """Render the object at 0,0 on the snapshot"""
