@@ -132,9 +132,9 @@ class PhysicsSpace:
                 (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1)
                 or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1)
             ):
-                STRETCH_MIN = 0.95
-                x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 20, 1) / 800) ** .85)
-                y_strech = max(STRETCH_MIN, 1 - (max(y_diff - 20, 1) / 800) ** .85)
+                STRETCH_MIN = 0.8
+                x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 20, 1) / 800) ** 1.5)
+                y_strech = max(STRETCH_MIN, 1 - (max(y_diff - 20, 1) / 800) ** 1.5)
 
                 x_strech += (1 - y_strech) 
                 y_strech += (1 - x_strech) 
