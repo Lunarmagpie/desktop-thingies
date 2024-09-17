@@ -132,10 +132,9 @@ class PhysicsSpace:
             if (obj._strech_time > 0):
                 x_strech = 1 - (1 - obj._strech_scale_x) * (obj._strech_time / STRECH_TIME)
                 y_strech = 1 - (1 - obj._strech_scale_y) * (obj._strech_time / STRECH_TIME)
-                print(x_strech, y_strech)
             elif (
-                (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1)
-                or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1)
+                (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1 or abs(obj._body.velocity.x - obj._last_velocity_x) > 10)
+                or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1  or abs(obj._body.velocity.y - obj._last_velocity_y) > 10)
             ):
                 STRETCH_MIN = 0.9
                 x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 10, 1) / 800) ** 1.8)
