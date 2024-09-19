@@ -60,6 +60,12 @@ def clamp(n: float, max: float):
         return max
     return n
 
+def rotate(point, angle):
+    return (
+        math.cos(angle) * point[0] - math.sin(angle) * point[1],
+        math.sin(angle) * point[0] + math.cos(angle) * point[1]
+    )
+
 
 class Canvas(Gtk.Widget):
     def __init__(self, draw_func: Callable[[Gtk.Snapshot], None] | None = None) -> None:
@@ -136,15 +142,15 @@ class PhysicsSpace:
                 (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1 or abs(obj._body.velocity.x - obj._last_velocity_x) > 10)
                 or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1  or abs(obj._body.velocity.y - obj._last_velocity_y) > 10)
             ):
-                STRETCH_MIN = 0.9
-                x_strech = max(STRETCH_MIN, 1 - (max(x_diff - 10, 1) / 800) ** 1.8)
-                y_strech = max(STRETCH_MIN, 1 - (max(y_diff - 10, 1) / 800) ** 1.8)
+                vector_angle = math.cos(obj._last_velocity_y / (obj._last_velocity_x or 0.00001))
+                velocity = x_diff + y_diff
 
-                x_strech += (1 - y_strech) 
-                y_strech += (1 - x_strech)
+                strech = max(0.8, 1 - (max(velocity  - 10, 1) / 800) ** 1.8)
+                x_strech, y_strech = rotate((strech, strech), vector_angle)
+                
 
-                obj._strech_scale_x = x_strech
-                obj._strech_scale_y = y_strech
+                obj._strech_scale_x = max(x_strech, .4)
+                obj._strech_scale_y = max(y_strech, .4)
                 obj._strech_time = STRECH_TIME + 1
 
             if x_strech > 1.5:
