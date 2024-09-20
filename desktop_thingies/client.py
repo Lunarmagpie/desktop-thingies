@@ -1,3 +1,4 @@
+from logging import lastResort
 import dataclasses
 import random
 import typing
@@ -99,6 +100,8 @@ class PhysicsSpace:
 
 
     holding_body: pymunk.Body | None = None
+    last_holding_body: pymunk.Body | None = None
+    time_since_hold: int = 0
     is_initialized: bool = False
 
     mouse_position: tuple[int, int] = (0, 0)
@@ -134,23 +137,36 @@ class PhysicsSpace:
             x_diff = abs(obj._body.velocity.x - obj._last_velocity_x)
             y_diff = abs(obj._body.velocity.y - obj._last_velocity_y)
 
-            STRECH_TIME = 4
-            if (obj._strech_time > 0):
-                x_strech = 1 - (1 - obj._strech_scale_x) * (obj._strech_time / STRECH_TIME)
-                y_strech = 1 - (1 - obj._strech_scale_y) * (obj._strech_time / STRECH_TIME)
+            STRECH_TIME = 20
+
+            if (self.last_holding_body == obj._body and self.time_since_hold < 4):
+                pass
+            elif (obj._strech_time > 0):
+                # x_strech = 1 - (1 - obj._strech_scale_x) * (obj._strech_time / STRECH_TIME)
+                # y_strech = 1 - (1 - obj._strech_scale_y) * (obj._strech_time / STRECH_TIME)
+                x_strech = obj._strech_scale_x
+                y_strech = obj._strech_scale_y
             elif (
-                (abs(obj._last_velocity_x) > 0.1 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1 or abs(obj._body.velocity.x - obj._last_velocity_x) > 10)
-                or (abs(obj._last_velocity_y) > 0.1 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1  or abs(obj._body.velocity.y - obj._last_velocity_y) > 10)
+                (abs(obj._last_velocity_x) > 5 and math.copysign(1, obj._body.velocity.x / obj._last_velocity_x) == -1 or abs(obj._body.velocity.x - obj._last_velocity_x) > 10)
+                or (abs(obj._last_velocity_y) > 5 and math.copysign(1, obj._body.velocity.y / obj._last_velocity_y) == -1  or abs(obj._body.velocity.y - obj._last_velocity_y) > 10)
             ):
-                vector_angle = math.cos(obj._last_velocity_y / (obj._last_velocity_x or 0.00001))
+                vector_angle = math.atan2(obj._last_velocity_y, obj._last_velocity_x)
+
+                while vector_angle < 0 or vector_angle > math.pi / 2:
+                    if vector_angle < 0:
+                        vector_angle += math.pi / 2
+                    if vector_angle > math.pi / 2:
+                        vector_angle -= math.pi / 2
+                
                 velocity = x_diff + y_diff
 
-                strech = max(0.8, 1 - (max(velocity  - 10, 1) / 800) ** 1.8)
-                x_strech, y_strech = rotate((strech, strech), vector_angle)
-                
+                strech = max(0.8, 1 - (max(velocity  - 10, 1) / 800))
+                x_strech, y_strech = rotate((2, 1), vector_angle)
 
-                obj._strech_scale_x = max(x_strech, .4)
-                obj._strech_scale_y = max(y_strech, .4)
+                print(x_strech, y_strech)
+
+                obj._strech_scale_x = x_strech
+                obj._strech_scale_y = y_strech
                 obj._strech_time = STRECH_TIME + 1
 
             if x_strech > 1.5:
@@ -173,8 +189,7 @@ class PhysicsSpace:
                 )
             )
             snapshot.transform(Gsk.Transform.new().scale(x_strech, y_strech))
-
-            snapshot.rotate(angle)
+            # snapshot.rotate(angle)
 
             obj.render_onto(snapshot)
 
@@ -210,6 +225,8 @@ class PhysicsSpace:
         if self.holding_body != None:
             return
         self.holding_body = getattr(self.check_hovered_object(x, y), "_body", None)
+        self.last_holding_body = self.holding_body
+        self.time_since_hold = 0
         if self.holding_body:
             self.canvas.set_cursor_from_name("grabbing")
             frame_clock = self.window.get_frame_clock()
@@ -310,6 +327,7 @@ class PhysicsSpace:
             return
 
         if self.holding_body is not None:
+            self.time_since_hold = 0
             self.sim_sleep = False
             distance = (
                 self.mouse_position[0] / SIMULATION_SCALE
@@ -342,6 +360,9 @@ class PhysicsSpace:
                     or object._body.angular_velocity != 0
                 ):
                     self.sim_sleep = False
+
+            self.time_since_hold += 1
+
             self.sim_lock.release()
 
     def setup_window(self):
